@@ -22,7 +22,7 @@ public class MagnetHelpers {
                 && (player instanceof ServerPlayer || item.tickCount > 1)
                 && !item.getItem().isEmpty()) {
             // Don't pick if thrown by the player
-            if (item.hasPickUpDelay() && (item.thrower == null || item.thrower.equals(player.getUUID()))) return false;
+            if (item.hasPickUpDelay()) return false;
 
             // Compatibility with demagnetization tool
             if (item.getPersistentData().contains("PreventRemoteMovement")) return false;

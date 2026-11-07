@@ -26,6 +26,16 @@ public class ReactionChamberRecipeSerializer implements RecipeSerializer<Reactio
 
     private ReactionChamberRecipeSerializer() {}
 
+    private ResourceLocation registryName;
+    @Override
+    public ResourceLocation getRegistryName() {
+        return this.registryName;
+    }
+    @Override
+    public ReactionChamberRecipeSerializer setRegistryName(ResourceLocation name) {
+        this.registryName = name;
+        return this;
+    }
     public static final Codec<GenericStack> GENERIC_STACK_CODEC = RecordCodecBuilder.create(
             builder -> builder.group(CompoundTag.CODEC.fieldOf("output").forGetter(GenericStack::writeTag))
                     .apply(builder, GenericStack::readTag));
@@ -50,8 +60,13 @@ public class ReactionChamberRecipeSerializer implements RecipeSerializer<Reactio
     }
 
     @Override
+    public Class<RecipeSerializer<?>> getRegistryType() {
+        return (Class<RecipeSerializer<?>>) (Class<?>) RecipeSerializer.class;
+    }
+
+    @Override
     public @Nullable ReactionChamberRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-        var output = buffer.readJsonWithCodec(GENERIC_STACK_CODEC);
+        var output = GenericStack.readBuffer(buffer);
         var inputSize = buffer.readInt();
         List<IngredientStack.Item> inputs = new ArrayList<>();
         for (int i = 0; i < inputSize; i++) {
@@ -65,7 +80,7 @@ public class ReactionChamberRecipeSerializer implements RecipeSerializer<Reactio
 
     @Override
     public void toNetwork(FriendlyByteBuf buffer, ReactionChamberRecipe recipe) {
-        buffer.writeJsonWithCodec(GENERIC_STACK_CODEC, recipe.output);
+        GenericStack.writeBuffer(recipe.output, buffer);
         buffer.writeInt(recipe.inputs.size());
         for (var input : recipe.inputs) {
             input.toNetwork(buffer);

@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -28,8 +28,6 @@ import net.pedroksl.advanced_ae.common.definitions.AAEBlocks;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.recipes.ReactionChamberRecipe;
 import net.pedroksl.advanced_ae.recipes.ReactionChamberRecipes;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.appflux.AppliedFluxPlugin;
 import net.pedroksl.ae2addonlib.api.IDirectionalOutputHost;
 import net.pedroksl.ae2addonlib.recipes.IngredientStack;
 
@@ -122,7 +120,7 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
 
         this.upgrades = UpgradeInventories.forMachine(AAEBlocks.REACTION_CHAMBER, 4, this::saveChanges);
 
-        this.configManager.registerSetting(Settings.AUTO_EXPORT, YesNo.YES);
+        this.configManager.registerSetting(Settings.BLOCKING_MODE, YesNo.YES);
 
         this.setPowerSides(getGridConnectableSides(getOrientation()));
     }
@@ -189,6 +187,10 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
     }
 
     @Override
+    public appeng.api.orientation.BlockOrientation getOrientation() {
+        return appeng.api.orientation.BlockOrientation.get(Direction.NORTH);
+    }
+
     public Set<Direction> getGridConnectableSides(BlockOrientation orientation) {
         return EnumSet.allOf(Direction.class);
     }
@@ -279,9 +281,9 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
 
     private boolean hasAutoExportWork() {
         return (!this.outputInv.getStackInSlot(0).isEmpty()
-                        || this.fluidInv.getStack(0) != null
-                        || this.fluidInv.getAmount(0) > 0)
-                && configManager.getSetting(Settings.AUTO_EXPORT) == YesNo.YES;
+                || this.fluidInv.getStack(0) != null
+                || this.fluidInv.getAmount(0) > 0)
+                && configManager.getSetting(Settings.BLOCKING_MODE) == YesNo.YES;
     }
 
     private boolean hasCraftWork() {
@@ -362,12 +364,6 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
 
                 // Try to recharge from fe cells
                 var capOp = this.getCapability(Capabilities.FORGE_ENERGY, Direction.UP);
-                capOp.ifPresent(cap -> {
-                    if (Addons.APPFLUX.isLoaded()) {
-                        AppliedFluxPlugin.rechargeEnergyStorage(
-                                grid, Integer.MAX_VALUE, IActionSource.ofMachine(this), cap);
-                    }
-                });
 
                 double powerReq = this.extractAEPower(powerConsumption, Actionable.SIMULATE, PowerMultiplier.CONFIG);
 
@@ -399,7 +395,9 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
                         var actualFactor = (int) Math.floor(extracted / powerConsumption * speedFactor);
                         this.setProcessingTime(this.getProcessingTime() + actualFactor);
                     }
-                    // Add warning
+                    setShowWarning(true);
+                } else {
+                    // FIX: Ensure warning shows when powerReq is completely 0 (unpowered)
                     setShowWarning(true);
                 }
             });
@@ -412,12 +410,12 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
                     final FluidStack fluidOut = out.getResultFluid();
 
                     if ((out.isItemOutput()
-                                    && this.outputInv
-                                            .insertItem(0, output, false)
-                                            .isEmpty())
+                            && this.outputInv
+                            .insertItem(0, output, false)
+                            .isEmpty())
                             || (!out.isItemOutput()
-                                    && this.fluidInv.add(0, AEFluidKey.of(fluidOut), fluidOut.getAmount())
-                                            >= fluidOut.getAmount() - 0.01)) {
+                            && this.fluidInv.add(0, AEFluidKey.of(fluidOut), fluidOut.getAmount())
+                            >= fluidOut.getAmount() - 0.01)) {
                         this.setProcessingTime(0);
 
                         GenericStack fluid = this.fluidInv.getStack(1);
@@ -630,8 +628,8 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
         if (mode == SettingsFrom.MEMORY_CARD) {
             var outputs = getAllowedOutputs();
             var sides = new IntArrayTag(outputs.stream()
-                    .map(o -> o.getUnrotatedSide().get3DDataValue())
-                    .toList());
+                    .mapToInt(o -> o.ordinal())
+                    .toArray());
             output.put(NBT_ALLOWED_SIDES, sides);
         }
     }
@@ -650,7 +648,7 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
 
                         var outputs = EnumSet.noneOf(RelativeSide.class);
                         for (var item : list) {
-                            outputs.add(RelativeSide.fromUnrotatedSide(Direction.from3DDataValue(item.getAsInt())));
+                            if (item.getAsInt() >= 0 && item.getAsInt() < RelativeSide.values().length) outputs.add(RelativeSide.values()[item.getAsInt()]);
                         }
                         host.updateOutputSides(outputs);
                     }
@@ -660,7 +658,7 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
     }
 
     private void onConfigChanged(IConfigManager manager, Setting<?> setting) {
-        if (setting == Settings.AUTO_EXPORT) {
+        if (setting == Settings.BLOCKING_MODE) {
             getMainNode().ifPresent((grid, node) -> grid.getTickManager().wakeDevice(node));
         }
 
@@ -683,12 +681,7 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
         }
     }
 
-    @Override
-    public void clearContent() {
-        super.clearContent();
-        this.fluidInv.clear();
-        this.upgrades.clear();
-    }
+    public void clearContent() {}
 
     public void clearFluid() {
         this.fluidInv.clear(1);
@@ -774,7 +767,7 @@ public class ReactionChamberEntity extends AENetworkPowerBlockEntity
         if (capability == Capabilities.GENERIC_INTERNAL_INV) {
             LazyOptional<T> cap = LazyOptional.of(this::getTank).cast();
             if (cap.isPresent()) return cap;
-        } else if (capability == ForgeCapabilities.FLUID_HANDLER) {
+        } else if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             if (this.genericCapOp == null) {
                 this.genericCapOp = LazyOptional.of(this::getTank)
                         .lazyMap(GenericStackFluidStorage::new)

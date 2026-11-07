@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.common.items;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -22,8 +24,6 @@ import net.pedroksl.advanced_ae.common.definitions.AAEBlockEntities;
 import net.pedroksl.advanced_ae.common.definitions.AAEBlocks;
 import net.pedroksl.advanced_ae.common.definitions.AAEItems;
 import net.pedroksl.advanced_ae.common.definitions.AAEText;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.eae.ExtendedAEPlugin;
 
 import appeng.blockentity.crafting.PatternProviderBlockEntity;
 import appeng.blockentity.networking.CableBusBlockEntity;
@@ -46,8 +46,7 @@ public class AdvPatternProviderUpgradeItem extends BlockUpgradeItem {
         if (entity != null) {
             var ctx = new BlockPlaceContext(context);
             var tClazz = entity.getClass();
-            if (tClazz == PatternProviderBlockEntity.class
-                    || (Addons.EXPATTERNPROVIDER.isLoaded() && ExtendedAEPlugin.isEntityProvider(tClazz))) {
+            if (tClazz == PatternProviderBlockEntity.class) {
 
                 var originState = world.getBlockState(pos);
                 var isSmall = tClazz == PatternProviderBlockEntity.class;
@@ -83,9 +82,7 @@ public class AdvPatternProviderUpgradeItem extends BlockUpgradeItem {
                 Vec3 hitInBlock = new Vec3(hitVec.x - pos.getX(), hitVec.y - pos.getY(), hitVec.z - pos.getZ());
                 var part = cable.getCableBus().selectPartLocal(hitInBlock).part;
                 if (part instanceof AEBasePart basePart
-                        && (part.getClass() == PatternProviderPart.class
-                                || (Addons.EXPATTERNPROVIDER.isLoaded())
-                                        && ExtendedAEPlugin.isPartProvider(part.getClass()))) {
+                        && (part.getClass() == PatternProviderPart.class)) {
                     var side = basePart.getSide();
                     var contents = new CompoundTag();
 
@@ -115,7 +112,7 @@ public class AdvPatternProviderUpgradeItem extends BlockUpgradeItem {
             ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
 
-        pTooltipComponents.add(Component.empty()
+        pTooltipComponents.add(new TextComponent("")
                 .append(AAEText.PatternProviderUpgrade.text().withStyle(AAEText.TOOLTIP_DEFAULT_COLOR)));
     }
 }

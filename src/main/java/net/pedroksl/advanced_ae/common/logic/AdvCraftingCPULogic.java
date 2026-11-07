@@ -88,7 +88,7 @@ public class AdvCraftingCPULogic {
                 .map(p -> p instanceof ServerPlayer serverPlayer ? IPlayerRegistry.getPlayerId(serverPlayer) : null)
                 .orElse(null);
         var craftId = UUID.randomUUID();
-        var linkCpu = new CraftingLink(CraftingCpuHelper.generateLinkData(craftId, requester == null, false), cpu);
+        var linkCpu = new CraftingLink(CraftingCpuHelper.generateLinkData(craftId.toString(), requester == null, false), cpu);
         this.job = new ExecutingCraftingJob(plan, this::postChange, linkCpu, playerId);
         cpu.updateOutput(plan.finalOutput());
         cpu.markDirty();
@@ -99,7 +99,7 @@ public class AdvCraftingCPULogic {
 
         // Non-standalone jobs need another link for the requester, and both links need to be submitted to the cache.
         if (requester != null) {
-            var linkReq = new CraftingLink(CraftingCpuHelper.generateLinkData(craftId, false, true), requester);
+            var linkReq = new CraftingLink(CraftingCpuHelper.generateLinkData(craftId.toString(), false, true), requester);
 
             var craftingService = (CraftingService) grid.getCraftingService();
             craftingService.addLink(linkCpu);
@@ -179,7 +179,7 @@ public class AdvCraftingCPULogic {
             // Contains the inputs for the pattern.
             @Nullable
             var craftingContainer = CraftingCpuHelper.extractPatternInputs(
-                    details, inventory, level, expectedOutputs, expectedContainerItems);
+                    details, inventory, level, expectedContainerItems);
 
             // Try to push to each provider.
             for (var provider : craftingService.getProviders(details)) {
@@ -225,7 +225,7 @@ public class AdvCraftingCPULogic {
                     expectedOutputs.reset();
                     expectedContainerItems.reset();
                     craftingContainer = CraftingCpuHelper.extractPatternInputs(
-                            details, inventory, level, expectedOutputs, expectedContainerItems);
+                            details, inventory, level, expectedContainerItems);
                 }
             }
 

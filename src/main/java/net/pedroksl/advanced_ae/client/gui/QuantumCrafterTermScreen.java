@@ -7,13 +7,15 @@ import it.unimi.dsi.fastutil.ints.Int2BooleanMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ClickType;
@@ -113,13 +115,12 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
 
         // Add a terminalstyle button
         TerminalStyle terminalStyle = AEConfig.instance().getTerminalStyle();
-        this.addToLeftToolbar(
-                new SettingToggleButton<>(Settings.TERMINAL_STYLE, terminalStyle, this::toggleTerminalStyle));
+        // this.addToLeftToolbar(new SettingToggleButton<>(Settings.TERMINAL_STYLE, terminalStyle, this::toggleTerminalStyle));
 
         showQuantumCrafters = AAESettingToggleButton.serverButton(
                 AAESettings.TERMINAL_SHOW_QUANTUM_CRAFTERS, ShowQuantumCrafters.VISIBLE);
 
-        this.addToLeftToolbar(showQuantumCrafters);
+        // this.addToLeftToolbar(showQuantumCrafters);
 
         this.searchField = widgets.addTextField("search");
         this.searchField.setResponder(str -> this.refreshList());
@@ -127,16 +128,39 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
     }
 
     @Override
+
+
     public void init() {
+        appeng.client.gui.style.TerminalStyle ts = style.getTerminalStyle();
         this.visibleRows = Math.max(
                 2,
-                config.getTerminalStyle()
-                        .getRows((this.height - GUI_HEADER_HEIGHT - GUI_FOOTER_HEIGHT - GUI_TOP_AND_BOTTOM_PADDING)
-                                / ROW_HEIGHT));
+                (ts == null ? 2 : ts.getPossibleRows((this.height - GUI_HEADER_HEIGHT - GUI_FOOTER_HEIGHT - GUI_TOP_AND_BOTTOM_PADDING)
+                                / ROW_HEIGHT)));
         // Render inventory in correct place.
         this.imageHeight = GUI_HEADER_HEIGHT + GUI_FOOTER_HEIGHT + this.visibleRows * ROW_HEIGHT;
 
         super.init();
+
+        try {
+            Class<?> aeBase = Class.forName("appeng.client.gui.AEBaseScreen");
+            java.lang.reflect.Field toolbarField = aeBase.getDeclaredField("verticalToolbar");
+            toolbarField.setAccessible(true);
+            Object toolbar = toolbarField.get(this);
+            if (toolbar != null) {
+                java.lang.reflect.Field posField = toolbar.getClass().getDeclaredField("position");
+                posField.setAccessible(true);
+                if (posField.get(toolbar) == null) {
+                    try {
+                        appeng.client.Point pt = (appeng.client.Point) appeng.client.Point.class
+                                .getDeclaredField("ZERO").get(null);
+                        posField.set(toolbar, pt);
+                    } catch (Throwable ignored) {
+                        posField.set(toolbar, new appeng.client.Point(0, 0));
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
 
         // Autofocus search field
         this.setInitialFocus(this.searchField);
@@ -154,7 +178,7 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
     }
 
     @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         this.menu.slots.removeIf(slot -> slot instanceof PatternSlot);
         this.configButtons.forEach((k, m) -> m.forEach((key, value) -> setVisibility(value, false)));
         this.enableButtons.forEach((k, m) -> m.forEach((key, value) -> setVisibility(value, false)));
@@ -171,7 +195,8 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
                     var configMap = this.configButtons.get(configRow.serverId);
                     for (int col = 0; col < configRow.slots; col++) {
                         var button = configMap.get(col);
-                        button.setPosition(offsetX + col * SLOT_SIZE + GUI_PADDING_X, offsetY + (i + 1) * SLOT_SIZE);
+                        button.x = offsetX + col * SLOT_SIZE + GUI_PADDING_X;
+                button.y = offsetY + (i + 1) * SLOT_SIZE;
                     }
                     configMap.forEach((key, value) -> setVisibility(value, true));
                 } else if (row instanceof SlotsRow slotsRow) {
@@ -188,7 +213,7 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
                         var pattern = slotsRow.container.getInventory().getStackInSlot(slotsRow.offset + col);
                         if (!pattern.isEmpty() && PatternDetailsHelper.decodePattern(pattern, level) == null
                                 || slotsRow.container.getInvalidArray().get(slotsRow.offset + col)) {
-                            guiGraphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, 0x7fff0000);
+                            GuiComponent.fill(guiGraphics, slot.x, slot.y, slot.x + 16, slot.y + 16, 0x7fff0000);
                         }
                     }
                 } else if (row instanceof EnabledRow enabledRow
@@ -196,8 +221,8 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
                     var buttonMap = this.enableButtons.get(enabledRow.container.getServerId());
                     for (int col = 0; col < enabledRow.slots; col++) {
                         var button = buttonMap.get(col);
-                        button.setPosition(
-                                offsetX + col * SLOT_SIZE + GUI_PADDING_X + 1, offsetY + (i + 1) * SLOT_SIZE);
+                        button.x = offsetX + col * SLOT_SIZE + GUI_PADDING_X + 1;
+                        button.y = offsetY + (i + 1) * SLOT_SIZE;
                         button.setSelected(
                                 enabledRow.container.getEnabledArray().get(enabledRow.offset + col));
                     }
@@ -245,7 +270,7 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
 
             if (action != null) {
                 final InventoryActionPacket p = new InventoryActionPacket(
-                        action, machineSlot.slot, machineSlot.getMachineInv().getServerId());
+                        action, machineSlot.index, machineSlot.getMachineInv().getServerId());
                 NetworkHandler.instance().sendToServer(p);
             }
 
@@ -256,7 +281,7 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         // Draw the top of the dialog
         blit(guiGraphics, offsetX, offsetY, HEADER_BBOX);
 
@@ -381,6 +406,20 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
 
     @Override
     public void updateBeforeRender() {
+        try {
+            Class<?> aeBase = Class.forName("appeng.client.gui.AEBaseScreen");
+            java.lang.reflect.Field toolbarField = aeBase.getDeclaredField("verticalToolbar");
+            toolbarField.setAccessible(true);
+            Object toolbar = toolbarField.get(this);
+            if (toolbar != null) {
+                java.lang.reflect.Field posField = toolbar.getClass().getDeclaredField("position");
+                posField.setAccessible(true);
+                if (posField.get(toolbar) == null) {
+                    posField.set(toolbar, new appeng.client.Point(0, 0));
+                }
+            }
+        } catch (Throwable ignored) {
+        }
         super.updateBeforeRender();
         this.showQuantumCrafters.set(this.menu.getShownQuantumCrafters());
     }
@@ -449,10 +488,10 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
                             b -> menu.configPattern(container.getServerId(), index));
                     configButtons.put(index, this.addRenderableWidget(cfgButton));
 
-                    var enabledButton = new AECheckbox(0, 0, 12, 12, this.style, Component.empty());
+                    var enabledButton = new AECheckbox(0, 0, 12, 12, this.style, new TextComponent(""));
                     enabledButton.setChangeListener(() -> menu.toggleEnabledPattern(container.getServerId(), index));
                     enabledButton.setRadio(true);
-                    enabledButton.setTooltip(Tooltip.create(AAEText.EnablePatternButton.text()));
+                    /* no tooltip */
                     enabledButtons.put(index, this.addRenderableWidget(enabledButton));
                 }
                 this.configButtons.put(container.getServerId(), configButtons);
@@ -489,7 +528,7 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
     }
 
     private String getPatternSearchText(ItemStack stack) {
-        var level = menu.getPlayer().level();
+        var level = menu.getPlayer().level;
         var text = new StringBuilder();
         var pattern = PatternDetailsHelper.decodePattern(stack, level);
 
@@ -559,12 +598,12 @@ public class QuantumCrafterTermScreen<C extends QuantumCrafterTermMenu> extends 
     /**
      * A version of blit that lets us pass a source rectangle
      *
-     * @see GuiGraphics#blit(ResourceLocation, int, int, int, int, int, int)
+     * @see PoseStack#blit(ResourceLocation, int, int, int, int, int, int)
      */
-    private void blit(GuiGraphics guiGraphics, int offsetX, int offsetY, Rect2i srcRect) {
+    private void blit(PoseStack guiGraphics, int offsetX, int offsetY, Rect2i srcRect) {
         var texture = AppEng.makeId("textures/guis/quantum_crafter_terminal.png");
-        guiGraphics.blit(
-                texture, offsetX, offsetY, srcRect.getX(), srcRect.getY(), srcRect.getWidth(), srcRect.getHeight());
+        RenderSystem.setShaderTexture(0, texture);
+        GuiComponent.blit(guiGraphics, offsetX, offsetY, srcRect.getX(), srcRect.getY(), srcRect.getWidth(), srcRect.getHeight(), srcRect.getWidth(), srcRect.getHeight());
     }
 
     protected int getVisibleRows() {

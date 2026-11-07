@@ -13,7 +13,7 @@ public class QuantumLeggings extends QuantumArmorBase {
     private static final double MAX_POWER_STORAGE = 250000000;
 
     public QuantumLeggings(Properties properties) {
-        super(AAEMaterials.QUANTUM_ALLOY, Type.LEGGINGS, properties, () -> MAX_POWER_STORAGE);
+        super(AAEMaterials.QUANTUM_ALLOY, EquipmentSlot.LEGS, properties, () -> MAX_POWER_STORAGE);
 
         registerUpgrades(
                 UpgradeType.WALK_SPEED,

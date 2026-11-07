@@ -15,7 +15,7 @@ public class QuantumArmorUpgradeStatePacket extends AddonPacket {
     public QuantumArmorUpgradeStatePacket(FriendlyByteBuf stream) {
         selectedIndex = stream.readInt();
 
-        stack = stream.readJsonWithCodec(ItemStack.CODEC);
+        stack = stream.readItem();
     }
 
     public QuantumArmorUpgradeStatePacket(int selectedIndex, ItemStack stack) {
@@ -27,7 +27,7 @@ public class QuantumArmorUpgradeStatePacket extends AddonPacket {
     public void write(FriendlyByteBuf stream) {
         stream.writeInt(selectedIndex);
 
-        stream.writeJsonWithCodec(ItemStack.CODEC, stack);
+        stream.writeItem(stack);
     }
 
     @Override

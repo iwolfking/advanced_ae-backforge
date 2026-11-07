@@ -1,7 +1,10 @@
 package net.pedroksl.advanced_ae.common.blocks;
 
-import static appeng.block.crafting.PatternProviderBlock.PUSH_DIRECTION;
+
+import net.pedroksl.advanced_ae.common.definitions.AAEBlockEntities;
+
 import static net.pedroksl.advanced_ae.common.blocks.AdvPatternProviderBlock.CONNECTION_STATE;
+import static net.pedroksl.advanced_ae.common.blocks.AdvPatternProviderBlock.PUSH_DIRECTION;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -19,14 +22,13 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.entities.SmallAdvPatternProviderEntity;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.appflux.AppliedFluxPlugin;
 
 import appeng.block.AEBaseEntityBlock;
-import appeng.block.crafting.PushDirection;
+import net.pedroksl.advanced_ae.common.blocks.PushDirection;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
 import appeng.util.InteractionUtil;
@@ -34,7 +36,7 @@ import appeng.util.Platform;
 
 public class SmallAdvPatternProviderBlock extends AEBaseEntityBlock<SmallAdvPatternProviderEntity> {
     public SmallAdvPatternProviderBlock() {
-        super(metalProps());
+        super(appeng.block.AEBaseBlock.defaultProps(net.minecraft.world.level.material.Material.METAL));
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(PUSH_DIRECTION, PushDirection.ALL)
                 .setValue(CONNECTION_STATE, false));
@@ -54,17 +56,14 @@ public class SmallAdvPatternProviderBlock extends AEBaseEntityBlock<SmallAdvPatt
         var be = this.getBlockEntity(level, pos);
         if (be != null) {
             be.getLogic().updateRedstoneState();
-            if (Addons.APPFLUX.isLoaded() && !level.isClientSide()) {
-                AppliedFluxPlugin.notifyBlockUpdate(be.getLogic(), pos, fromPos);
-            }
+
         }
     }
 
     @Override
     public void onNeighborChange(BlockState state, LevelReader level, BlockPos pos, BlockPos neighbor) {
         var be = this.getBlockEntity(level, pos);
-        if (be != null && Addons.APPFLUX.isLoaded() && !level.isClientSide()) {
-            AppliedFluxPlugin.notifyBlockUpdate(be.getLogic(), pos, neighbor);
+        if (be != null && !level.isClientSide()) {
         }
     }
 
@@ -96,20 +95,12 @@ public class SmallAdvPatternProviderBlock extends AEBaseEntityBlock<SmallAdvPatt
     }
 
     public void setSide(Level level, BlockPos pos, Direction facing) {
-        var currentState = level.getBlockState(pos);
-        var pushSide = currentState.getValue(PUSH_DIRECTION).getDirection();
+        // push direction unavailable in AE2 1.18
+    }
 
-        PushDirection newPushDirection;
-        if (pushSide == facing.getOpposite()) {
-            newPushDirection = PushDirection.fromDirection(facing);
-        } else if (pushSide == facing) {
-            newPushDirection = PushDirection.ALL;
-        } else if (pushSide == null) {
-            newPushDirection = PushDirection.fromDirection(facing.getOpposite());
-        } else {
-            newPushDirection = PushDirection.fromDirection(Platform.rotateAround(pushSide, facing));
-        }
-
-        level.setBlockAndUpdate(pos, currentState.setValue(PUSH_DIRECTION, newPushDirection));
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity newBlockEntity(
+            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        return AAEBlockEntities.SMALL_ADV_PATTERN_PROVIDER.get().create(pos, state);
     }
 }

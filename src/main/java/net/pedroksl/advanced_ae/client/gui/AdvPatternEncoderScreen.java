@@ -1,10 +1,13 @@
 package net.pedroksl.advanced_ae.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiComponent;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.annotation.Nullable;
 
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.Direction;
@@ -22,8 +25,6 @@ import appeng.api.stacks.AEKey;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.Scrollbar;
-import appeng.client.guidebook.document.LytRect;
-import appeng.client.guidebook.render.SimpleRenderContext;
 import appeng.core.AppEng;
 import appeng.menu.slot.FakeSlot;
 
@@ -57,7 +58,8 @@ public class AdvPatternEncoderScreen extends AEBaseScreen<AdvPatternEncoderMenu>
     }
 
     @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+        PoseStack poseStack = guiGraphics;
         this.menu.slots.removeIf(slot -> slot instanceof FakeSlot);
         this.directionButtons.forEach((key, value) -> {
             for (int x = 0; x < 7; x++) {
@@ -75,22 +77,21 @@ public class AdvPatternEncoderScreen extends AEBaseScreen<AdvPatternEncoderMenu>
             }
 
             InputRow row = this.rows.get(currentRow);
-            var renderContext = new SimpleRenderContext(LytRect.empty(), guiGraphics);
-            renderContext.renderItem(
-                    row.key().wrapForDisplayOrFilter(), LIST_ANCHOR_X + 1, LIST_ANCHOR_Y + 1 + i * ROW_HEIGHT, 16, 16);
+            this.minecraft.getItemRenderer().renderGuiItem(
+                    row.key().wrapForDisplayOrFilter(), LIST_ANCHOR_X + 1, LIST_ANCHOR_Y + 1 + i * ROW_HEIGHT);
 
             var buttons = this.directionButtons.get(row.key);
             var highlight = getSelectedDirButton(row.dir);
             for (var col = 0; col < 7; col++) {
                 var button = buttons[col];
-                button.setPosition(
+                button.x =
                         this.leftPos
                                 + LIST_ANCHOR_X
                                 + 1
                                 + SLOT_SIZE
                                 + (col + 1) * DIRECTION_BUTTONS_OFFSET_X
-                                + col * DIRECTION_BUTTONS_WIDTH,
-                        this.topPos + LIST_ANCHOR_Y + 1 + i * ROW_HEIGHT);
+                                + col * DIRECTION_BUTTONS_WIDTH;
+                button.y = this.topPos + LIST_ANCHOR_Y + 1 + i * ROW_HEIGHT;
                 button.setHighlighted(col == highlight);
                 button.visible = true;
             }
@@ -98,7 +99,8 @@ public class AdvPatternEncoderScreen extends AEBaseScreen<AdvPatternEncoderMenu>
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        PoseStack poseStack = guiGraphics;
         super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         int currentX = offsetX + LIST_ANCHOR_X;
@@ -106,14 +108,17 @@ public class AdvPatternEncoderScreen extends AEBaseScreen<AdvPatternEncoderMenu>
 
         int visibleRows = Math.min(VISIBLE_ROWS, this.inputList.size());
         for (int i = 0; i < visibleRows; ++i) {
-            guiGraphics.blit(
-                    DEFAULT_TEXTURE,
+            RenderSystem.setShaderTexture(0, DEFAULT_TEXTURE);
+            GuiComponent.blit(
+                    poseStack,
                     currentX,
                     currentY,
                     SLOT_BBOX.getX(),
                     SLOT_BBOX.getY(),
                     SLOT_BBOX.getWidth(),
-                    SLOT_BBOX.getHeight());
+                    SLOT_BBOX.getHeight(),
+                    256,
+                    256);
             currentY += ROW_HEIGHT;
         }
     }

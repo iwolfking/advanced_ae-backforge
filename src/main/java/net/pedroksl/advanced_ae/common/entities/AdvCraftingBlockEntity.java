@@ -17,7 +17,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.IModelData;
 import net.pedroksl.advanced_ae.common.blocks.AAEAbstractCraftingUnitBlock;
 import net.pedroksl.advanced_ae.common.blocks.AAECraftingUnitBlock;
 import net.pedroksl.advanced_ae.common.blocks.AAECraftingUnitType;
@@ -152,11 +152,10 @@ public class AdvCraftingBlockEntity extends AENetworkBlockEntity
         }
 
         if (updateFormed) {
-            onGridConnectableSidesChanged();
+            /* onGridConnectableSidesChanged(); */
         }
     }
 
-    @Override
     public Set<Direction> getGridConnectableSides(BlockOrientation orientation) {
         if (isFormed()) {
             return getUnitBlock().type == AAECraftingUnitType.QUANTUM_CORE
@@ -305,8 +304,8 @@ public class AdvCraftingBlockEntity extends AENetworkBlockEntity
     }
 
     @Override
-    public ModelData getModelData() {
-        return CraftingCubeModelData.create(getConnections());
+    public net.minecraftforge.client.model.data.IModelData getModelData() {
+        return net.minecraftforge.client.model.data.EmptyModelData.INSTANCE;
     }
 
     protected EnumSet<Direction> getConnections() {

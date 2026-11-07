@@ -8,20 +8,26 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.LazyLoadedValue;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.entity.EquipmentSlot;
 
 @SuppressWarnings("deprecation")
 public enum AAEMaterials implements StringRepresentable, ArmorMaterial {
     QUANTUM_ALLOY(
             "quantum_alloy",
             10,
-            Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
-                map.put(ArmorItem.Type.BOOTS, 4);
-                map.put(ArmorItem.Type.LEGGINGS, 6);
-                map.put(ArmorItem.Type.CHESTPLATE, 9);
-                map.put(ArmorItem.Type.HELMET, 4);
+            Util.make(new EnumMap<>(EquipmentSlot.class), map -> {
+                map.put(EquipmentSlot.FEET, 4);
+                map.put(EquipmentSlot.LEGS, 6);
+                map.put(EquipmentSlot.CHEST, 9);
+                map.put(EquipmentSlot.HEAD, 4);
             }),
             15,
             SoundEvents.ARMOR_EQUIP_NETHERITE,
@@ -29,18 +35,17 @@ public enum AAEMaterials implements StringRepresentable, ArmorMaterial {
             0.25F,
             () -> Ingredient.of(AAEItems.QUANTUM_ALLOY));
 
-    public static final StringRepresentable.EnumCodec<AAEMaterials> CODEC =
-            StringRepresentable.fromEnum(AAEMaterials::values);
-    private static final EnumMap<ArmorItem.Type, Integer> HEALTH_FUNCTION_FOR_TYPE =
-            Util.make(new EnumMap<>(ArmorItem.Type.class), (p_266653_) -> {
-                p_266653_.put(ArmorItem.Type.BOOTS, 13);
-                p_266653_.put(ArmorItem.Type.LEGGINGS, 15);
-                p_266653_.put(ArmorItem.Type.CHESTPLATE, 16);
-                p_266653_.put(ArmorItem.Type.HELMET, 11);
+    public static final /*StringRepresentable*/ StringRepresentable CODEC = null;
+    private static final EnumMap<EquipmentSlot, Integer> HEALTH_FUNCTION_FOR_TYPE =
+            Util.make(new EnumMap<>(EquipmentSlot.class), (p_266653_) -> {
+                p_266653_.put(EquipmentSlot.FEET, 13);
+                p_266653_.put(EquipmentSlot.LEGS, 15);
+                p_266653_.put(EquipmentSlot.CHEST, 16);
+                p_266653_.put(EquipmentSlot.HEAD, 11);
             });
     private final String name;
     private final int durabilityMultiplier;
-    private final EnumMap<ArmorItem.Type, Integer> protectionFunctionForType;
+    private final EnumMap<EquipmentSlot, Integer> protectionFunctionForType;
     private final int enchantmentValue;
     private final SoundEvent sound;
     private final float toughness;
@@ -50,7 +55,7 @@ public enum AAEMaterials implements StringRepresentable, ArmorMaterial {
     AAEMaterials(
             String pName,
             int pDurabilityMultiplier,
-            EnumMap<ArmorItem.Type, Integer> pProtectionFunctionForType,
+            EnumMap<EquipmentSlot, Integer> pProtectionFunctionForType,
             int pEnchantmentValue,
             SoundEvent pSound,
             float pToughness,
@@ -66,11 +71,11 @@ public enum AAEMaterials implements StringRepresentable, ArmorMaterial {
         this.repairIngredient = new LazyLoadedValue<>(pRepairIngredient);
     }
 
-    public int getDurabilityForType(ArmorItem.Type pType) {
+    public int getDurabilityForSlot(EquipmentSlot pType) {
         return HEALTH_FUNCTION_FOR_TYPE.get(pType) * this.durabilityMultiplier;
     }
 
-    public int getDefenseForType(ArmorItem.Type pType) {
+    public int getDefenseForSlot(EquipmentSlot pType) {
         return this.protectionFunctionForType.get(pType);
     }
 

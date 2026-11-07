@@ -19,6 +19,7 @@ import net.pedroksl.ae2addonlib.network.clientPacket.FluidTankStackUpdatePacket;
 import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
 import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.util.IConfigManager;
 import appeng.helpers.externalstorage.GenericStackInv;
 import appeng.menu.SlotSemantics;
@@ -37,6 +38,12 @@ public class ReactionChamberMenu extends UpgradeableMenu<ReactionChamberEntity>
     @GuiSync(3)
     public int processingTime = -1;
 
+    @GuiSync(4)
+    public long storedPower = 0;
+
+    @GuiSync(5)
+    public long maxPower = 0;
+
     @GuiSync(7)
     public YesNo autoExport = YesNo.NO;
 
@@ -51,6 +58,8 @@ public class ReactionChamberMenu extends UpgradeableMenu<ReactionChamberEntity>
     private static final String CONFIGURE_OUTPUT = "configureOutput";
 
     private final List<Slot> inputs = new ArrayList<>(9);
+
+    private final GenericStackInv clientTank = new GenericStackInv(null, GenericStackInv.Mode.STORAGE, 2);
 
     public ReactionChamberMenu(int id, Inventory ip, ReactionChamberEntity host) {
         super(AAEMenus.REACTION_CHAMBER.get(), id, ip, host);
@@ -70,7 +79,7 @@ public class ReactionChamberMenu extends UpgradeableMenu<ReactionChamberEntity>
     }
 
     protected void loadSettingsFromHost(IConfigManager cm) {
-        this.autoExport = this.getHost().getConfigManager().getSetting(Settings.AUTO_EXPORT);
+        // autoExport setting unavailable in AE 1.18; keep default
     }
 
     @Override
@@ -80,6 +89,8 @@ public class ReactionChamberMenu extends UpgradeableMenu<ReactionChamberEntity>
             this.maxProcessingTime = getHost().getMaxProcessingTime();
             this.processingTime = getHost().getProcessingTime();
             this.showWarning = getHost().showWarning();
+            this.storedPower = (long) getHost().getInternalCurrentPower();
+            this.maxPower = (long) getHost().getInternalMaxPower();
 
             var genInput = this.getHost().getTank().getStack(1);
             FluidStack inputFluid = FluidStack.EMPTY;
@@ -177,7 +188,18 @@ public class ReactionChamberMenu extends UpgradeableMenu<ReactionChamberEntity>
 
     @Override
     public GenericStackInv getTank() {
+        if (isClientSide()) {
+            return this.clientTank;
+        }
         return this.getHost().getTank();
+    }
+
+    public void setClientFluid(int index, FluidStack stack) {
+        if (stack.isEmpty()) {
+            this.clientTank.setStack(index, null);
+        } else {
+            this.clientTank.setStack(index, new GenericStack(AEFluidKey.of(stack.getFluid()), stack.getAmount()));
+        }
     }
 
     @Override

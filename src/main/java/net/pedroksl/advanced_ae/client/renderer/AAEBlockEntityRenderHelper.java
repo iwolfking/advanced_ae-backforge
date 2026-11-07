@@ -28,7 +28,7 @@ public final class AAEBlockEntityRenderHelper {
                 false,
                 poseStack.last().pose(),
                 buffers,
-                Font.DisplayMode.NORMAL,
+                false,
                 0,
                 15728880);
         poseStack.popPose();

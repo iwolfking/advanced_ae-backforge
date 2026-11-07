@@ -53,18 +53,13 @@ public class ReactionChamberRecipe implements Recipe<Container> {
     }
 
     @Override
-    public ItemStack assemble(Container inv, RegistryAccess registryAccess) {
-        return getResultItem(registryAccess).copy();
+    public ItemStack assemble(Container inv) {
+        return getResultItem().copy();
     }
 
     @Override
     public boolean canCraftInDimensions(int width, int height) {
         return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(RegistryAccess registryAccess) {
-        return getResultItem();
     }
 
     public boolean isItemOutput() {

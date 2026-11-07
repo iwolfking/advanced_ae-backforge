@@ -164,7 +164,7 @@ public class ThroughputMonitorPart extends AbstractMonitorPart implements IGridT
     public boolean onPartActivate(Player player, InteractionHand hand, Vec3 pos) {
         if (!isClientSide()) {
             var heldItem = player.getItemInHand(hand);
-            if (heldItem.is(AAEItems.MONITOR_CONFIGURATOR.asItem())) {
+            if (heldItem.is(AAEItems.MONITOR_CONFIGURATOR.get())) {
                 cycleWorkRoutine();
                 return true;
             }
@@ -179,7 +179,6 @@ public class ThroughputMonitorPart extends AbstractMonitorPart implements IGridT
         getMainNode().ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
     }
 
-    @Override
     protected void configureWatchers() {
         if (getDisplayed() != null) {
             updateState(getAmount(), TickHandler.instance().getCurrentTick());
@@ -188,7 +187,6 @@ public class ThroughputMonitorPart extends AbstractMonitorPart implements IGridT
             getMainNode().ifPresent((grid, node) -> grid.getTickManager().sleepDevice(node));
         }
 
-        super.configureWatchers();
     }
 
     @Override
@@ -202,20 +200,18 @@ public class ThroughputMonitorPart extends AbstractMonitorPart implements IGridT
         if (this.isActive()) {
             if (getDisplayed() != null) {
                 poseStack.pushPose();
-                BlockOrientation orientation = BlockOrientation.get(this.getSide(), this.getSpin());
+                BlockOrientation orientation = BlockOrientation.get(this.getSide());
                 poseStack.translate(0.5, 0.5, 0.5);
-                BlockEntityRenderHelper.rotateToFace(poseStack, orientation);
+                BlockEntityRenderHelper.rotateToFace(poseStack, this.getSide(), (byte) this.getSpin());
                 poseStack.translate(0, 0.1, 0.5);
                 BlockEntityRenderHelper.renderItem2dWithAmount(
                         poseStack,
                         buffers,
                         this.getDisplayed(),
                         getAmount(),
-                        canCraft(),
                         0.3F,
                         -0.15F,
-                        this.getColor().contrastTextColor,
-                        this.getLevel());
+                        this.getColor().contrastTextColor);
 
                 poseStack.translate(0, -0.23F, 0);
                 var sign = lastReportedValue > 0 ? "+" : lastReportedValue == 0 ? "" : "-";
@@ -282,7 +278,7 @@ public class ThroughputMonitorPart extends AbstractMonitorPart implements IGridT
             this.lastReportedValue = amountPerTick * this.workRoutine.ticks;
             if (this.lastReportedValue > 10 || this.lastReportedValue == 0) {
                 this.lastHumanReadableValue =
-                        getDisplayed().formatAmount(Math.round(Math.abs(lastReportedValue)), AmountFormat.SLOT);
+                        getDisplayed().formatAmount(Math.round(Math.abs(lastReportedValue)), AmountFormat.FULL);
             } else {
                 this.lastHumanReadableValue = String.format("%.2f", Math.abs(this.lastReportedValue));
             }

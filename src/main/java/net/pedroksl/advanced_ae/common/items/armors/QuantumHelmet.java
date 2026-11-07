@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -12,8 +13,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.pedroksl.advanced_ae.client.renderer.QuantumArmorRenderer;
 import net.pedroksl.advanced_ae.common.definitions.AAEMaterials;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.definitions.AAEText;
@@ -21,7 +20,6 @@ import net.pedroksl.advanced_ae.common.helpers.PortableCellWorkbenchMenuHost;
 import net.pedroksl.advanced_ae.common.items.upgrades.UpgradeType;
 import net.pedroksl.advanced_ae.network.AAENetworkHandler;
 import net.pedroksl.advanced_ae.network.packet.MenuSelectionPacket;
-import net.pedroksl.advanced_ae.xmod.iris.IrisPlugin;
 
 import appeng.api.implementations.menuobjects.ItemMenuHost;
 import appeng.menu.MenuOpener;
@@ -31,7 +29,7 @@ public class QuantumHelmet extends QuantumArmorBase {
     private static final double MAX_POWER_STORAGE = 200000000;
 
     public QuantumHelmet(Properties properties) {
-        super(AAEMaterials.QUANTUM_ALLOY, Type.HELMET, properties, () -> MAX_POWER_STORAGE);
+        super(AAEMaterials.QUANTUM_ALLOY, EquipmentSlot.HEAD, properties, () -> MAX_POWER_STORAGE);
 
         registerUpgrades(
                 UpgradeType.WATER_BREATHING,
@@ -52,20 +50,9 @@ public class QuantumHelmet extends QuantumArmorBase {
                     tickUpgrades(level, player, stack);
                 }
 
-                if (level.isClientSide()) {
-                    toggleBoneVisibilities(stack, player);
-                }
-            }
-        }
-    }
+                // bone visibility handling disabled in 1.18 backport
 
-    @OnlyIn(Dist.CLIENT)
-    private void toggleBoneVisibilities(ItemStack stack, Player player) {
-        var item = (QuantumArmorBase) stack.getItem();
-        var renderer = IClientItemExtensions.of(item).getHumanoidArmorModel(player, stack, EquipmentSlot.HEAD, null);
-        if (renderer instanceof QuantumArmorRenderer quantumRenderer) {
-            var visible = IrisPlugin.isShaderPackInUse();
-            quantumRenderer.setBoneVisible(QuantumArmorRenderer.HUD_BONE, visible);
+            }
         }
     }
 
@@ -96,8 +83,8 @@ public class QuantumHelmet extends QuantumArmorBase {
                         MenuLocators.forInventorySlot(inventorySlot),
                         returningFromSubmenu);
             } else {
-                var id = Component.translatable(
-                        UpgradeType.WORKBENCH.item().asItem().getDescriptionId());
+                var id = new TranslatableComponent(
+                        UpgradeType.WORKBENCH.item().get().getDescriptionId());
                 player.displayClientMessage(AAEText.UpgradeNotInstalledMessage.text(id), true);
             }
         }

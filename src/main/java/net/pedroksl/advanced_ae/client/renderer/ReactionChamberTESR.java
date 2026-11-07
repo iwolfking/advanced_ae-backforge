@@ -5,7 +5,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import org.joml.Quaternionf;
+import com.mojang.math.Quaternion;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,10 +19,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.pedroksl.advanced_ae.common.definitions.AAEConfig;
 import net.pedroksl.advanced_ae.common.entities.ReactionChamberEntity;
 
@@ -59,13 +59,11 @@ public class ReactionChamberTESR implements BlockEntityRenderer<ReactionChamberE
 
         var state = fluidStack.getFluid().defaultFluidState();
 
-        IClientFluidTypeExtensions fluidTypeExtensions = IClientFluidTypeExtensions.of(fluidStack.getFluid());
-        ResourceLocation texture = fluidTypeExtensions.getStillTexture(fluidStack);
-
+        ResourceLocation texture = new ResourceLocation("minecraft", "block/water_still");
         TextureAtlasSprite sprite = Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
                 .apply(texture);
-        int tintColor = fluidTypeExtensions.getTintColor(state, level, pos);
+        int tintColor = 0xFFFFFFFF;
 
         VertexConsumer buffer = buffers.getBuffer(Sheets.translucentCullBlockSheet());
 
@@ -186,7 +184,7 @@ public class ReactionChamberTESR implements BlockEntityRenderer<ReactionChamberE
             float duration = 10000;
             long t = System.currentTimeMillis() % (int) duration;
             float angle = t / (duration / 360f) + index * 120;
-            ms.rotateAround(new Quaternionf().rotationY(Mth.DEG_TO_RAD * angle), 0.5f, 0f, 0.5f);
+            ms.mulPose(new Quaternion(0, Mth.sin(Mth.DEG_TO_RAD * angle / 2.0f), 0, Mth.cos(Mth.DEG_TO_RAD * angle / 2.0f)));
             var yOffset = itemYPosition(t, duration) / 12f;
             ms.translate(0.25f, T - 0.1 + yOffset, 0.5f);
             ms.scale(ITEM_RENDER_SCALE, ITEM_RENDER_SCALE, ITEM_RENDER_SCALE);
@@ -194,12 +192,11 @@ public class ReactionChamberTESR implements BlockEntityRenderer<ReactionChamberE
             ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
             itemRenderer.renderStatic(
                     stack,
-                    ItemDisplayContext.GROUND,
+                    ItemTransforms.TransformType.GROUND,
                     combinedLight,
                     combinedOverlay,
                     ms,
                     buffers,
-                    Minecraft.getInstance().level,
                     0);
             ms.popPose();
         }

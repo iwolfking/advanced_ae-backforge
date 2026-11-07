@@ -8,7 +8,7 @@ import net.pedroksl.advanced_ae.common.logic.AdvPatternProviderLogic;
 
 import appeng.api.config.YesNo;
 import appeng.api.stacks.AEKey;
-import appeng.helpers.patternprovider.PatternProviderReturnInventory;
+import appeng.helpers.iface.PatternProviderReturnInventory;
 
 public class AdvPatternProviderReturnInventory extends PatternProviderReturnInventory {
     public AdvPatternProviderReturnInventory(Runnable listener, AdvPatternProviderLogic logic) {

@@ -3,6 +3,7 @@ package net.pedroksl.advanced_ae.common.parts;
 import java.util.EnumSet;
 import java.util.List;
 
+import appeng.helpers.iface.PatternProviderLogic;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -21,8 +22,6 @@ import net.pedroksl.advanced_ae.common.definitions.AAEItems;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.logic.AdvPatternProviderLogic;
 import net.pedroksl.advanced_ae.common.logic.AdvPatternProviderLogicHost;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.appflux.AppliedFluxPlugin;
 
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.IGridNodeListener;
@@ -65,7 +64,7 @@ public class AdvPatternProviderPart extends AEBasePart implements AdvPatternProv
         super(partItem);
         this.getMainNode().setFlags(GridFlags.REQUIRE_CHANNEL);
 
-        this.logic = createLogic(slots);
+        this.logic = createLogic();
     }
 
     @Override
@@ -128,9 +127,7 @@ public class AdvPatternProviderPart extends AEBasePart implements AdvPatternProv
     @Override
     public void onNeighborChanged(BlockGetter level, BlockPos pos, BlockPos neighbor) {
         this.logic.updateRedstoneState();
-        if (Addons.APPFLUX.isLoaded()) {
-            AppliedFluxPlugin.notifyBlockUpdate(this.getLogic(), this.getSide(), pos, neighbor);
-        }
+
     }
 
     @Override
@@ -151,13 +148,13 @@ public class AdvPatternProviderPart extends AEBasePart implements AdvPatternProv
         MenuOpener.returnTo(AAEMenus.ADV_PATTERN_PROVIDER.get(), player, subMenu.getLocator());
     }
 
-    protected AdvPatternProviderLogic createLogic(int slots) {
-        return new AdvPatternProviderLogic(this.getMainNode(), this, slots);
+    protected AdvPatternProviderLogic createLogic() {
+        return new AdvPatternProviderLogic(this.getMainNode(), this);
     }
 
     @Override
     public AdvPatternProviderLogic getLogic() {
-        return this.logic;
+        return logic;
     }
 
     @Override

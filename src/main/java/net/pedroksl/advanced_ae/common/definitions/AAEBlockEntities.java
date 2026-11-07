@@ -44,11 +44,12 @@ public final class AAEBlockEntities extends BlockEntityRegistry {
             SmallAdvPatternProviderEntity::new,
             AAEBlocks.SMALL_ADV_PATTERN_PROVIDER);
 
-    public static final Supplier<BlockEntityType<ReactionChamberEntity>> REACTION_CHAMBER = create(
-            "reaction_chamber", ReactionChamberEntity.class, ReactionChamberEntity::new, AAEBlocks.REACTION_CHAMBER);
 
     public static final Supplier<BlockEntityType<QuantumCrafterEntity>> QUANTUM_CRAFTER =
             create("quantum_craft", QuantumCrafterEntity.class, QuantumCrafterEntity::new, AAEBlocks.QUANTUM_CRAFTER);
+
+    public static final Supplier<BlockEntityType<ReactionChamberEntity>> REACTION_CHAMBER =
+            create("reaction_chamber", ReactionChamberEntity.class, ReactionChamberEntity::new, AAEBlocks.REACTION_CHAMBER);
 
     @SafeVarargs
     private static <T extends AEBaseBlockEntity> Supplier<BlockEntityType<T>> create(

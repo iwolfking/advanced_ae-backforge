@@ -1,13 +1,19 @@
 package net.pedroksl.advanced_ae;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.pedroksl.advanced_ae.common.definitions.*;
 import net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem;
 import net.pedroksl.advanced_ae.common.patterns.AdvPatternDetailsDecoder;
@@ -16,9 +22,6 @@ import net.pedroksl.advanced_ae.events.AAEPlayerEvents;
 import net.pedroksl.advanced_ae.network.AAENetworkHandler;
 import net.pedroksl.advanced_ae.recipes.InitRecipeSerializers;
 import net.pedroksl.advanced_ae.recipes.InitRecipeTypes;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.ae2wtlib.AE2WtLibPlugin;
-import net.pedroksl.advanced_ae.xmod.appflux.AppliedFluxPlugin;
 
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.features.GridLinkables;
@@ -45,22 +48,16 @@ public class AdvancedAE {
         AAEBlockEntities.INSTANCE.register(eventBus);
         AAEFluids.INSTANCE.register(eventBus);
         AAEMenus.INSTANCE.register(eventBus);
-        AAECreativeTab.INSTANCE.register(eventBus);
 
         eventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
 
         eventBus.addListener(AdvancedAE::initUpgrades);
-        eventBus.addListener((RegisterEvent event) -> {
-            if (event.getRegistryKey() == Registries.RECIPE_TYPE) {
-                InitRecipeTypes.init(ForgeRegistries.RECIPE_TYPES);
-            } else if (event.getRegistryKey() == Registries.RECIPE_SERIALIZER) {
-                InitRecipeSerializers.init(ForgeRegistries.RECIPE_SERIALIZERS);
-            } else if (event.getRegistryKey() == Registries.ITEM) {
-                if (Addons.AE2WTLIB.isLoaded()) {
-                    AE2WtLibPlugin.commonInit();
-                }
-            }
+        eventBus.addGenericListener(RecipeType.class, (RegistryEvent.Register event) -> {
+            InitRecipeTypes.init(event.getRegistry());
+        });
+        eventBus.addGenericListener(RecipeSerializer.class, (RegistryEvent.Register<RecipeSerializer<?>> event) -> {
+            InitRecipeSerializers.init(event.getRegistry());
         });
 
         AAEHotkeysRegistry.INSTANCE.init();
@@ -76,51 +73,81 @@ public class AdvancedAE {
         PatternDetailsHelper.registerDecoder(AdvPatternDetailsDecoder.INSTANCE);
         initGridLinkables();
         AAEPlayerEvents.init();
-        AAELivingEntityEvents.init();
     }
 
     public static void initGridLinkables() {
-        GridLinkables.register(AAEItems.QUANTUM_HELMET, IGridLinkedItem.LINKABLE_HANDLER);
-        GridLinkables.register(AAEItems.QUANTUM_CHESTPLATE, IGridLinkedItem.LINKABLE_HANDLER);
-        GridLinkables.register(AAEItems.QUANTUM_LEGGINGS, IGridLinkedItem.LINKABLE_HANDLER);
-        GridLinkables.register(AAEItems.QUANTUM_BOOTS, IGridLinkedItem.LINKABLE_HANDLER);
-        if (Addons.AE2WTLIB.isLoaded()) {
-            AE2WtLibPlugin.initGridLinkables();
-        }
+
+
     }
 
     private static void initUpgrades(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            Upgrades.add(AEItems.SPEED_CARD, AAEBlocks.REACTION_CHAMBER, 4);
             Upgrades.add(AEItems.SPEED_CARD, AAEBlocks.QUANTUM_CRAFTER, 4);
             Upgrades.add(AEItems.REDSTONE_CARD, AAEBlocks.QUANTUM_CRAFTER, 1);
-            Upgrades.add(AEItems.SPEED_CARD, AAEItems.STOCK_EXPORT_BUS, 4);
-            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.STOCK_EXPORT_BUS, 5);
-            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.STOCK_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.CRAFTING_CARD, AAEItems.STOCK_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.FUZZY_CARD, AAEItems.STOCK_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.SPEED_CARD, AAEItems.IMPORT_EXPORT_BUS, 4);
-            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.IMPORT_EXPORT_BUS, 5);
-            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.IMPORT_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.CRAFTING_CARD, AAEItems.IMPORT_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.FUZZY_CARD, AAEItems.IMPORT_EXPORT_BUS, 1);
-            Upgrades.add(AEItems.SPEED_CARD, AAEItems.ADVANCED_IO_BUS, 4);
-            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.ADVANCED_IO_BUS, 5);
-            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.ADVANCED_IO_BUS, 1);
-            Upgrades.add(AEItems.CRAFTING_CARD, AAEItems.ADVANCED_IO_BUS, 1);
-            Upgrades.add(AEItems.FUZZY_CARD, AAEItems.ADVANCED_IO_BUS, 1);
-
-            if (Addons.APPFLUX.isLoaded()) {
-                AppliedFluxPlugin.init();
-            }
-
-            if (Addons.AE2WTLIB.isLoaded()) {
-                AE2WtLibPlugin.initUpgrades();
-            }
+            Upgrades.add(AEItems.SPEED_CARD, AAEItems.STOCK_EXPORT_BUS.get(), 4);
+            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.STOCK_EXPORT_BUS.get(), 4);
+            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.STOCK_EXPORT_BUS.get(), 1);
+            Upgrades.add(AEItems.SPEED_CARD, AAEItems.IMPORT_EXPORT_BUS.get(), 4);
+            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.IMPORT_EXPORT_BUS.get(), 4);
+            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.IMPORT_EXPORT_BUS.get(), 1);
+            Upgrades.add(AEItems.SPEED_CARD, AAEItems.ADVANCED_IO_BUS.get(), 4);
+            Upgrades.add(AEItems.CAPACITY_CARD, AAEItems.ADVANCED_IO_BUS.get(), 4);
+            Upgrades.add(AEItems.REDSTONE_CARD, AAEItems.ADVANCED_IO_BUS.get(), 1);
         });
     }
 
     public static ResourceLocation makeId(String id) {
         return new ResourceLocation(MOD_ID, id);
+    }
+
+
+    @SubscribeEvent
+    public void onAdvancedAEScreenOpened(ScreenEvent.InitScreenEvent.Post event) {
+        Object screen = event.getScreen();
+        if (screen == null) return;
+        try {
+            Class<?> aeBase = Class.forName("appeng.client.gui.AEBaseScreen");
+            if (!aeBase.isInstance(screen)) return;
+            Field toolbarField = aeBase.getDeclaredField("verticalToolbar");
+            toolbarField.setAccessible(true);
+            Object toolbar = toolbarField.get(screen);
+            if (toolbar == null) return;
+            Field posField = toolbar.getClass().getDeclaredField("position");
+            posField.setAccessible(true);
+            if (posField.get(toolbar) != null) return;
+            Field styleField = aeBase.getDeclaredField("style");
+            styleField.setAccessible(true);
+            Object style = styleField.get(screen);
+            if (style == null) return;
+            Method getBounds = aeBase.getDeclaredMethod("getBounds", boolean.class);
+            getBounds.setAccessible(true);
+            Object bounds = getBounds.invoke(screen, Boolean.TRUE);
+            Method getWidget = style.getClass().getMethod("getWidget", String.class);
+            Object widgetStyle = getWidget.invoke(style, "verticalToolbar");
+            if (widgetStyle == null) return;
+            Method resolve = widgetStyle.getClass().getMethod("resolve", bounds.getClass());
+            Object point = resolve.invoke(widgetStyle, bounds);
+            if (point != null) posField.set(toolbar, point);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @SubscribeEvent
+    public void onRightClickWirelessAccessPoint(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getWorld().isClientSide()) return;
+        net.minecraft.world.entity.player.Player player = event.getPlayer();
+        net.minecraft.core.BlockPos pos = event.getPos();
+        net.minecraft.world.level.block.entity.BlockEntity be = event.getWorld().getBlockEntity(pos);
+        if (!(be instanceof appeng.api.implementations.blockentities.IWirelessAccessPoint)) return;
+        for (var stack : player.getInventory().items) {
+            if (stack != null && stack.getItem() instanceof net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem) {
+                net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem.LINKABLE_HANDLER.link(stack, pos.asLong());
+            }
+        }
+        for (var stack : player.getInventory().armor) {
+            if (stack != null && stack.getItem() instanceof net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem i) {
+                net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem.LINKABLE_HANDLER.link(stack, pos.asLong());
+            }
+        }
     }
 }

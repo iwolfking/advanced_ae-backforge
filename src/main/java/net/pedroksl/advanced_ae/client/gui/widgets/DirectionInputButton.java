@@ -5,11 +5,13 @@ import com.mojang.datafixers.util.Pair;
 
 import org.jetbrains.annotations.NotNull;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import appeng.api.stacks.AEKey;
@@ -23,7 +25,7 @@ public class DirectionInputButton extends Button {
 
     public DirectionInputButton(
             int x, int y, int width, int height, Pair<ResourceLocation, ResourceLocation> textures, OnPress onPress) {
-        super(x, y, width, height, Component.empty(), onPress, Button.DEFAULT_NARRATION);
+        super(x, y, width, height, new TextComponent(""), onPress);
 
         this.textures = textures;
     }
@@ -56,16 +58,15 @@ public class DirectionInputButton extends Button {
         };
     }
 
-    @Override
-    protected void renderWidget(@NotNull GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void renderButton(PoseStack pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         RenderSystem.setShader(GameRenderer::getPositionShader);
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         if (highlighted) {
             RenderSystem.setShaderTexture(0, textures.getSecond());
-            pGuiGraphics.blit(textures.getSecond(), this.getX(), this.getY(), 0, 0, width, height, 16, 16);
+            GuiComponent.blit(pGuiGraphics, this.x, this.y, 0, 0, width, height, 16, 16);
         } else {
             RenderSystem.setShaderTexture(0, textures.getFirst());
-            pGuiGraphics.blit(textures.getFirst(), this.getX(), this.getY(), 0, 0, width, height, 16, 16);
+            GuiComponent.blit(pGuiGraphics, this.x, this.y, 0, 0, width, height, 16, 16);
         }
     }
 

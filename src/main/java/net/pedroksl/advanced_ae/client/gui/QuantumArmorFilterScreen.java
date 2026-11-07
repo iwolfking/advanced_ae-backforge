@@ -3,8 +3,8 @@ package net.pedroksl.advanced_ae.client.gui;
 import java.util.ArrayList;
 
 import org.jetbrains.annotations.NotNull;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -32,7 +32,7 @@ public class QuantumArmorFilterScreen<M extends QuantumArmorFilterConfigMenu> ex
             assert this.minecraft != null;
 
             if (this.minecraft.options.keyPickItem.matchesMouse(btn)) {
-                Slot slot = this.findSlot(xCoord, yCoord);
+                Slot slot = this.hoveredSlot;
                 if (this.isValidSlot(slot)) {
                     this.menu.openAmountMenu(slot.index);
                 }
@@ -43,10 +43,10 @@ public class QuantumArmorFilterScreen<M extends QuantumArmorFilterConfigMenu> ex
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int x, int y) {
+    protected void renderTooltip(@NotNull PoseStack guiGraphics, int x, int y) {
         if (this.menu.getCarried().isEmpty() && this.isValidSlot(this.hoveredSlot)) {
             ArrayList<Component> itemTooltip =
-                    new ArrayList<>(this.getTooltipFromContainerItem(this.hoveredSlot.getItem()));
+                    new ArrayList<>(this.getTooltipFromItem(this.hoveredSlot.getItem()));
             GenericStack unwrapped = GenericStack.fromItemStack(this.hoveredSlot.getItem());
             if (unwrapped != null) {
                 itemTooltip.add(Tooltips.getAmountTooltip(ButtonToolTips.Amount, unwrapped));

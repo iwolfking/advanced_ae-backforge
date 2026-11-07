@@ -7,6 +7,7 @@ import java.util.Map;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.pedroksl.advanced_ae.client.gui.QuantumArmorConfigScreen;
@@ -51,7 +52,7 @@ public class QuantumUpgradeWidget {
             host.addChildWidget("upgrade_config" + index, configureButton, children);
         }
 
-        enableButton = new AECheckbox(x + 98, y, 16, 16, style, Component.empty());
+        enableButton = new AECheckbox(x + 98, y, 16, 16, style, new TextComponent(""));
         enableButton.setSelected(state.enabled());
         enableButton.setChangeListener(this::toggleEnable);
         host.addChildWidget("upgrade_enable" + index, enableButton, children);
@@ -100,9 +101,9 @@ public class QuantumUpgradeWidget {
         this.y = y;
         this.children.values().forEach(w -> {
             if (w instanceof AECheckbox) {
-                w.setY(topPos + y);
+                w.x = w.x; w.y = topPos + y;
             } else {
-                w.setY(topPos + y - 1);
+                w.x = w.x; w.y = topPos + y - 1;
             }
         });
     }
@@ -128,22 +129,22 @@ public class QuantumUpgradeWidget {
     static class ConfigButton extends IconButton {
         public ConfigButton(int x, int y, OnPress onPress) {
             super(onPress);
-            setX(x);
-            setY(y);
+            this.x = x;
+            this.y = y;
             setDisableBackground(true);
         }
 
         @Override
         protected Icon getIcon() {
-            return isHoveredOrFocused() ? Icon.WRENCH : Icon.WRENCH_DISABLED;
+            return Icon.WRENCH;
         }
     }
 
     static class UninstallButton extends AddonIconButton {
         public UninstallButton(int x, int y, OnPress onPress) {
             super(onPress);
-            setX(x);
-            setY(y);
+            this.x = x;
+            this.y = y;
             setDisableBackground(true);
         }
 

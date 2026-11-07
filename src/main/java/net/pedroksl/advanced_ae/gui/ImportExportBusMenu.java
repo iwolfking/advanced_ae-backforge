@@ -1,5 +1,7 @@
 package net.pedroksl.advanced_ae.gui;
 
+import appeng.menu.implementations.IOBusMenu;
+import appeng.parts.automation.ExportBusPart;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
@@ -21,12 +23,12 @@ public class ImportExportBusMenu extends UpgradeableMenu<ImportExportBusPart> {
 
     @Override
     protected void setupConfig() {
-        this.addExpandableConfigSlots((this.getHost()).getConfig(), 2, 9, 5);
+        this.addExpandableConfigSlots(this.getHost().getConfig(), 1, 9, 0);
     }
 
     @Override
     public boolean isSlotEnabled(int idx) {
-        int upgrades = this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD);
-        return upgrades > idx;
+        int capacityUpgrades = this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD);
+        return idx < capacityUpgrades;
     }
 }

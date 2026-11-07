@@ -10,8 +10,6 @@ import net.pedroksl.advanced_ae.common.definitions.AAEItems;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.inventory.AdvPatternEncoderHost;
 import net.pedroksl.advanced_ae.common.patterns.AdvPatternDetailsEncoder;
-import net.pedroksl.advanced_ae.common.patterns.AdvProcessingPattern;
-import net.pedroksl.advanced_ae.common.patterns.AdvProcessingPatternItem;
 import net.pedroksl.advanced_ae.network.AAENetworkHandler;
 import net.pedroksl.advanced_ae.network.packet.AdvPatternEncoderPacket;
 
@@ -73,14 +71,11 @@ public class AdvPatternEncoderMenu extends AEBaseMenu {
         ItemStack stack = this.inputSlot.getItem();
 
         IPatternDetails details =
-                PatternDetailsHelper.decodePattern(stack, this.getPlayer().level(), false);
+                PatternDetailsHelper.decodePattern(stack, this.getPlayer().level, false);
 
         if (details == null) return;
 
         if (!(details instanceof AEProcessingPattern pattern)) return;
-        boolean advPattern = details instanceof AdvProcessingPattern;
-        AdvProcessingPattern advDetails = advPattern ? (AdvProcessingPattern) details : null;
-
         var sparseInputs = pattern.getSparseInputs();
 
         LinkedHashMap<AEKey, Direction> inputList = new LinkedHashMap<>();
@@ -90,18 +85,15 @@ public class AdvPatternEncoderMenu extends AEBaseMenu {
             }
 
             if (!inputList.containsKey(input.what())) {
-                Direction dir = advPattern ? advDetails.getDirectionSideForInputKey(input.what()) : null;
+                Direction dir = null;
                 inputList.put(input.what(), dir);
             }
         }
 
-        if (advPattern) {
-            this.outputSlot.set(stack.copy());
-        } else {
-            var newAdvPattern = AdvPatternDetailsEncoder.encodeProcessingPattern(
-                    pattern.getSparseInputs(), pattern.getSparseOutputs(), inputList);
-            this.outputSlot.set(newAdvPattern);
-        }
+        var newAdvPattern = AdvPatternDetailsEncoder.encodeProcessingPattern(
+                pattern.getSparseInputs(), pattern.getSparseOutputs(), inputList);
+        System.out.println("[AAE] setting output=" + newAdvPattern);
+        this.outputSlot.set(newAdvPattern);
 
         if (this.getPlayer() instanceof ServerPlayer sp) {
             AAENetworkHandler.INSTANCE.sendTo(new AdvPatternEncoderPacket(inputList), sp);
@@ -119,42 +111,32 @@ public class AdvPatternEncoderMenu extends AEBaseMenu {
             copyItemToOutputSlot();
         }
 
-        var item = this.outputSlot.getItem().getItem();
-        if (item instanceof AdvProcessingPatternItem patternItem) {
-            AdvProcessingPattern pattern = patternItem.decode(
-                    this.outputSlot.getItem(), this.getPlayer().level(), false);
-            if (pattern != null) {
-                var dirMap = pattern.getDirectionMap();
-                dirMap.put(key, dir);
-                var newPattern = AdvPatternDetailsEncoder.encodeProcessingPattern(
-                        pattern.getSparseInputs(), pattern.getSparseOutputs(), dirMap);
-                this.outputSlot.set(newPattern);
-
-                if (this.getPlayer() instanceof ServerPlayer sp) {
-                    AAENetworkHandler.INSTANCE.sendTo(new AdvPatternEncoderPacket(dirMap), sp);
-                }
-            }
+        if (!this.outputSlot.hasItem()) {
+            return;
         }
+
+        ItemStack updated = net.pedroksl.advanced_ae.common.patterns.AdvPatternDetailsEncoder.updateDirection(
+                this.outputSlot.getItem(), key, dir);
+        this.outputSlot.set(updated);
+
+        if (this.getPlayer() instanceof ServerPlayer sp) {
+            var dirMap = net.pedroksl.advanced_ae.common.patterns.AdvPatternEncoding.getInputDirections(
+                    updated.getOrCreateTag());
+            AAENetworkHandler.INSTANCE.sendTo(new net.pedroksl.advanced_ae.network.packet.AdvPatternEncoderPacket(dirMap), sp);
+        }
+
     }
 
     public void copyItemToOutputSlot() {
         ItemStack stack = this.inputSlot.getItem();
 
         IPatternDetails details =
-                PatternDetailsHelper.decodePattern(stack, this.getPlayer().level(), false);
+                PatternDetailsHelper.decodePattern(stack, this.getPlayer().level, false);
 
         if (details == null) return;
 
         if (!(details instanceof AEProcessingPattern pattern)) return;
-        boolean advPattern = details instanceof AdvProcessingPattern;
-
-        if (advPattern) {
-            this.outputSlot.set(stack);
-        } else {
-            var newAdvPattern =
-                    AAEItems.ADV_PROCESSING_PATTERN.get().encode(pattern.getSparseInputs(), pattern.getSparseOutputs());
-            this.outputSlot.set(newAdvPattern);
-        }
+        this.outputSlot.set(stack);
     }
 
     public interface inventoryChangedHandler {

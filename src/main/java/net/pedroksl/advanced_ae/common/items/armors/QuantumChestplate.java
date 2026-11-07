@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -21,8 +22,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.pedroksl.advanced_ae.client.renderer.QuantumArmorRenderer;
 import net.pedroksl.advanced_ae.common.definitions.AAEItems;
 import net.pedroksl.advanced_ae.common.definitions.AAEMaterials;
 import net.pedroksl.advanced_ae.common.definitions.AAEText;
@@ -43,14 +42,13 @@ import appeng.menu.ISubMenu;
 import appeng.menu.locator.MenuLocators;
 import appeng.menu.me.crafting.CraftAmountMenu;
 
-import software.bernie.geckolib.animatable.GeoItem;
 
-public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISubMenuHost {
+public class QuantumChestplate extends QuantumArmorBase implements ISubMenuHost {
 
     private static final double MAX_POWER_STORAGE = 300000000;
 
     public QuantumChestplate(Properties properties) {
-        super(AAEMaterials.QUANTUM_ALLOY, Type.CHESTPLATE, properties, () -> MAX_POWER_STORAGE);
+        super(AAEMaterials.QUANTUM_ALLOY, EquipmentSlot.CHEST, properties, () -> MAX_POWER_STORAGE);
 
         registerUpgrades(
                 UpgradeType.FLIGHT,
@@ -77,9 +75,8 @@ public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISub
                     tickUpgrades(level, player, stack);
                 }
 
-                if (level.isClientSide()) {
-                    toggleBoneVisibilities(stack, player);
-                }
+                // bone visibility handling disabled in 1.18 backport
+
             } else {
                 tickCreativeFlight(level, player, stack);
             }
@@ -92,17 +89,6 @@ public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISub
             if (player.getAbilities().flying) {
                 consumeEnergy(player, stack, UpgradeType.FLIGHT);
             }
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private void toggleBoneVisibilities(ItemStack stack, Player player) {
-        var item = (QuantumArmorBase) stack.getItem();
-        var renderer = IClientItemExtensions.of(item).getHumanoidArmorModel(player, stack, EquipmentSlot.CHEST, null);
-        if (renderer instanceof QuantumArmorRenderer quantumRenderer) {
-            var visible = item.hasUpgrade(stack, UpgradeType.STRENGTH);
-            quantumRenderer.setBoneVisible(QuantumArmorRenderer.LEFT_BLADE_BONE, visible);
-            quantumRenderer.setBoneVisible(QuantumArmorRenderer.RIGHT_BLADE_BONE, visible);
         }
     }
 
@@ -138,13 +124,13 @@ public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISub
                 }
                 // Upgrade disabled
                 else {
-                    var id = Component.translatable(upgrade.item().asItem().getDescriptionId());
+                    var id = new TranslatableComponent(upgrade.item().get().getDescriptionId());
                     player.displayClientMessage(AAEText.UpgradeNotEnabledMessage.text(id), true);
                 }
             }
             // Upgrade disabled
             else {
-                var id = Component.translatable(upgrade.item().asItem().getDescriptionId());
+                var id = new TranslatableComponent(upgrade.item().get().getDescriptionId());
                 player.displayClientMessage(AAEText.UpgradeNotInstalledMessage.text(id), true);
             }
         }
@@ -163,13 +149,13 @@ public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISub
     }
 
     private AEKey targetKey(Player player) {
-        var hitResult = player.pick(player.getBlockReach(), 0f, false);
+        var hitResult = player.pick(5.0D, 0f, false);
         if (hitResult instanceof BlockHitResult blockHitResult && blockHitResult.getType() == HitResult.Type.BLOCK) {
             var blockPos = blockHitResult.getBlockPos();
-            var blockState = player.level().getBlockState(blockPos);
+            var blockState = player.level.getBlockState(blockPos);
             ItemStack itemStack = blockState.getBlock().asItem().getDefaultInstance();
             if (blockState.hasBlockEntity()) {
-                BlockEntity blockEntity = player.level().getBlockEntity(blockPos);
+                BlockEntity blockEntity = player.level.getBlockEntity(blockPos);
                 if (blockEntity != null) {
                     if (blockEntity instanceof CableBusBlockEntity cable) {
                         var part = getSelectedPart(cable, hitResult);
@@ -201,7 +187,7 @@ public class QuantumChestplate extends QuantumArmorBase implements GeoItem, ISub
 
     public boolean keyIsCraftable(Player player, ItemStack stack, AEKey whatToCraft) {
         MutableObject<Component> errorHolder = new MutableObject<>();
-        var grid = this.getLinkedGrid(stack, player.level(), player);
+        var grid = this.getLinkedGrid(stack, player.level, player);
         if (grid != null) {
             if (grid.getCraftingService().isCraftable(whatToCraft)) {
                 return true;

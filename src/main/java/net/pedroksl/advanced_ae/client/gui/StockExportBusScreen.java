@@ -4,9 +4,8 @@ import java.util.ArrayList;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import net.pedroksl.advanced_ae.mixins.AbstractContainerScreenAccessor;
 import org.jetbrains.annotations.NotNull;
-
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -77,7 +76,7 @@ public class StockExportBusScreen<M extends StockExportBusMenu> extends Upgradea
         assert this.minecraft != null;
 
         if (this.minecraft.options.keyPickItem.matchesMouse(btn)) {
-            Slot slot = this.findSlot(xCoord, yCoord);
+            Slot slot = ((AbstractContainerScreenAccessor)this).invokeFindSlot(xCoord, yCoord);
             if (this.isValidSlot(slot)) {
                 this.menu.openAmountMenu(slot.index);
             }
@@ -87,10 +86,10 @@ public class StockExportBusScreen<M extends StockExportBusMenu> extends Upgradea
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int x, int y) {
+    protected void renderTooltip(@NotNull PoseStack guiGraphics, int x, int y) {
         if (this.menu.getCarried().isEmpty() && this.isValidSlot(this.hoveredSlot)) {
             ArrayList<Component> itemTooltip =
-                    new ArrayList<>(this.getTooltipFromContainerItem(this.hoveredSlot.getItem()));
+                    new ArrayList<>(this.getTooltipFromItem(this.hoveredSlot.getItem()));
             GenericStack unwrapped = GenericStack.fromItemStack(this.hoveredSlot.getItem());
             if (unwrapped != null) {
                 itemTooltip.add(Tooltips.getAmountTooltip(ButtonToolTips.Amount, unwrapped));
@@ -104,18 +103,17 @@ public class StockExportBusScreen<M extends StockExportBusMenu> extends Upgradea
     }
 
     @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
-        super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
-        PoseStack poseStack = guiGraphics.pose();
+    public void drawFG(PoseStack poseStack, int offsetX, int offsetY, int mouseX, int mouseY) {
+        super.drawFG(poseStack, offsetX, offsetY, mouseX, mouseY);
         poseStack.pushPose();
         poseStack.translate(10.0F, 17.0F, 0.0F);
         poseStack.scale(0.7F, 0.7F, 1.0F);
         Color color = this.style.getColor(PaletteColor.DEFAULT_TEXT_COLOR);
-        guiGraphics.drawString(this.font, AAEText.SetAmountButtonHint.text(), 0, 0, color.toARGB(), false);
+        this.font.draw(poseStack, AAEText.SetAmountButtonHint.text(), 0, 0, color.toARGB());
         poseStack.popPose();
     }
 
-    private boolean isValidSlot(Slot slot) {
+    boolean isValidSlot(Slot slot) {
         return slot != null && slot.isActive() && slot.hasItem() && this.menu.isConfigSlot(slot);
     }
 }

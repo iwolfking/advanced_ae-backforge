@@ -1,5 +1,8 @@
 package net.pedroksl.advanced_ae.client;
 
+import net.pedroksl.advanced_ae.client.renderer.QuantumArmorRenderer;
+import net.pedroksl.advanced_ae.common.items.armors.QuantumArmorBase;
+import net.pedroksl.advanced_ae.events.AAEClientPlayerEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,8 +13,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterColorHandlersEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import software.bernie.geckolib3.renderers.geo.GeoArmorRenderer;
+
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -19,25 +22,22 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.pedroksl.advanced_ae.AdvancedAE;
 import net.pedroksl.advanced_ae.client.gui.*;
-import net.pedroksl.advanced_ae.client.renderer.AAECraftingUnitModelProvider;
 import net.pedroksl.advanced_ae.client.renderer.ReactionChamberTESR;
 import net.pedroksl.advanced_ae.common.blocks.AAECraftingUnitType;
+import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.pedroksl.advanced_ae.common.definitions.AAEBlockEntities;
 import net.pedroksl.advanced_ae.common.definitions.AAEFluids;
+import net.pedroksl.advanced_ae.common.definitions.AAECreativeTab;
 import net.pedroksl.advanced_ae.common.definitions.AAEItems;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
-import net.pedroksl.advanced_ae.events.AAEClientPlayerEvents;
 import net.pedroksl.advanced_ae.gui.QuantumCrafterTermMenu;
 import net.pedroksl.advanced_ae.gui.StockExportBusMenu;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.ae2wtlib.AE2WtLibPlugin;
 import net.pedroksl.ae2addonlib.registry.helpers.LibTags;
 import net.pedroksl.ae2addonlib.util.Colors;
 
 import appeng.api.util.AEColor;
 import appeng.client.render.StaticItemColor;
 import appeng.client.render.crafting.CraftingCubeModel;
-import appeng.hooks.BuiltInModelHooks;
 import appeng.init.client.InitScreens;
 
 @SuppressWarnings("unused")
@@ -50,16 +50,13 @@ public class AAEClient extends AdvancedAE {
     public AAEClient() {
         super();
 
-        initBuiltInModels();
-
         IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        AAEClientPlayerEvents.init();
 
         eventBus.addListener(AAEClient::initItemBlockRenderTypes);
-        eventBus.addListener(AAEClient::initItemColours);
         eventBus.addListener(AAEClient::initRenderers);
-        eventBus.addListener(this::registerHotkeys);
+        eventBus.addListener(AAEClient::initRenderers);
+        eventBus.addListener(AAEClient::initArmorRenderers);
 
         INSTANCE = this;
 
@@ -69,27 +66,39 @@ public class AAEClient extends AdvancedAE {
             }
         });
 
+        AAEClientPlayerEvents.init();
+
         eventBus.addListener(this::clientSetup);
+        registerKeyMappings();
+    }
+
+    private static void registerKeyMappings() {
+        net.pedroksl.advanced_ae.client.AAEHotkeys.INSTANCE.finalizeRegistration(net.minecraftforge.client.ClientRegistry::registerKeyBinding);
     }
 
     private void clientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             Minecraft minecraft = Minecraft.getInstance();
             try {
+                if (AAECreativeTab.INSTANCE != null) {}
+
+                try {
+                    ModelLoaderRegistry.registerLoader(
+                            net.pedroksl.advanced_ae.AdvancedAE.makeId("block/crafting/quantum_structure_formed"),
+                            new appeng.client.render.SimpleModelLoader(() ->
+                                    new appeng.client.render.crafting.CraftingCubeModel(
+                                            new net.pedroksl.advanced_ae.client.renderer.AAECraftingUnitModelProvider(
+                                                    net.pedroksl.advanced_ae.common.blocks.AAECraftingUnitType.STRUCTURE))));
+                } catch (Throwable loaderErr) {
+                    LOGGER.warn("AAE failed to register quantum formed model loader", loaderErr);
+                }
                 initScreens();
+                InitScreens.init();
             } catch (Throwable e) {
                 LOGGER.error("AAE failed postClientSetup", e);
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private static void initBuiltInModels() {
-        for (AAECraftingUnitType type : AAECraftingUnitType.values()) {
-            BuiltInModelHooks.addBuiltInModel(
-                    AdvancedAE.makeId("block/crafting/" + type.getAffix() + "_formed"),
-                    new CraftingCubeModel(new AAECraftingUnitModelProvider(type)));
-        }
     }
 
     private static void initScreens() {
@@ -106,50 +115,37 @@ public class AAEClient extends AdvancedAE {
         InitScreens.register(
                 AAEMenus.ADV_PATTERN_ENCODER.get(), AdvPatternEncoderScreen::new, "/screens/adv_pattern_encoder.json");
         InitScreens.register(
+                AAEMenus.QUANTUM_CRAFTER.get(), QuantumCrafterScreen::new, "/screens/quantum_crafter.json");
+        InitScreens.register(
                 AAEMenus.REACTION_CHAMBER.get(), ReactionChamberScreen::new, "/screens/reaction_chamber.json");
+        InitScreens.register(
+                AAEMenus.CRAFTER_PATTERN_CONFIG.get(),
+                QuantumCrafterConfigPatternScreen::new,
+                "/screens/quantum_crafter_pattern_config.json");
+        // QCT screen disabled for 1.18 backport due missing terminal style.
+        // InitScreens.<QuantumCrafterTermMenu, QuantumCrafterTermScreen<QuantumCrafterTermMenu>>register(
+        //         AAEMenus.QUANTUM_CRAFTER_TERMINAL.get(),
+        //         QuantumCrafterTermScreen::new,
+        //         "/screens/quantum_crafter_terminal.json");
+        InitScreens.register(
+                AAEMenus.PORTABLE_WORKBENCH.get(), PortableWorkbenchScreen::new, "/screens/portable_workbench.json");
 
         InitScreens.<StockExportBusMenu, StockExportBusScreen<StockExportBusMenu>>register(
                 AAEMenus.STOCK_EXPORT_BUS.get(), StockExportBusScreen::new, "/screens/stock_export_bus.json");
         InitScreens.register(
                 AAEMenus.IMPORT_EXPORT_BUS.get(), ImportExportBusScreen::new, "/screens/import_export_bus.json");
-        InitScreens.register(AAEMenus.ADVANCED_IO_BUS.get(), AdvancedIOBusScreen::new, "/screens/advanced_io_bus.json");
-
         InitScreens.register(
-                AAEMenus.QUANTUM_CRAFTER.get(), QuantumCrafterScreen::new, "/screens/quantum_crafter.json");
+                AAEMenus.ADVANCED_IO_BUS.get(), AdvancedIOBusScreen::new, "/screens/advanced_io_bus.json");
         InitScreens.register(
-                AAEMenus.CRAFTER_PATTERN_CONFIG.get(),
-                QuantumCrafterConfigPatternScreen::new,
-                "/screens/quantum_crafter_pattern_config.json");
-        InitScreens.<QuantumCrafterTermMenu, QuantumCrafterTermScreen<QuantumCrafterTermMenu>>register(
-                AAEMenus.QUANTUM_CRAFTER_TERMINAL.get(),
-                QuantumCrafterTermScreen::new,
-                "/screens/quantum_crafter_terminal.json");
-        if (Addons.AE2WTLIB.isLoaded()) {
-            AE2WtLibPlugin.initScreen();
-        }
-
+                AAEMenus.QUANTUM_ARMOR_CONFIG.get(), QuantumArmorConfigScreen::new, "/screens/quantum_armor_config.json");
         InitScreens.register(
-                AAEMenus.QUANTUM_ARMOR_CONFIG.get(),
-                QuantumArmorConfigScreen::new,
-                "/screens/quantum_armor_config.json");
+                AAEMenus.QUANTUM_ARMOR_FILTER_CONFIG.get(), QuantumArmorFilterConfigScreen::new, "/screens/quantum_armor_filter_config.json");
         InitScreens.register(
-                AAEMenus.QUANTUM_ARMOR_NUM_INPUT.get(),
-                QuantumArmorNumInputConfigScreen::new,
-                "/screens/quantum_armor_num_input_config.json");
+                AAEMenus.QUANTUM_ARMOR_MAGNET.get(), QuantumArmorMagnetScreen::new, "/screens/quantum_armor_magnet.json");
         InitScreens.register(
-                AAEMenus.QUANTUM_ARMOR_FILTER_CONFIG.get(),
-                QuantumArmorFilterConfigScreen::new,
-                "/screens/quantum_armor_filter_config.json");
+                AAEMenus.QUANTUM_ARMOR_NUM_INPUT.get(), QuantumArmorNumInputConfigScreen::new, "/screens/quantum_armor_num_input_config.json");
         InitScreens.register(
-                AAEMenus.QUANTUM_ARMOR_MAGNET.get(),
-                QuantumArmorMagnetScreen::new,
-                "/screens/quantum_armor_magnet.json");
-        InitScreens.register(
-                AAEMenus.QUANTUM_ARMOR_STYLE_CONFIG.get(),
-                QuantumArmorStyleConfigScreen::new,
-                "/screens/quantum_armor_style.json");
-        InitScreens.register(
-                AAEMenus.PORTABLE_WORKBENCH.get(), PortableWorkbenchScreen::new, "/screens/portable_workbench.json");
+                AAEMenus.QUANTUM_ARMOR_STYLE_CONFIG.get(), QuantumArmorStyleConfigScreen::new, "/screens/quantum_armor_style.json");
     }
 
     @SuppressWarnings("deprecation")
@@ -160,30 +156,18 @@ public class AAEClient extends AdvancedAE {
         });
     }
 
-    private void registerHotkeys(RegisterKeyMappingsEvent e) {
-        AAEHotkeys.INSTANCE.finalizeRegistration(e::register);
+    @SuppressWarnings("deprecation")
+    private static void initItemColours() {
     }
 
-    @SuppressWarnings("deprecation")
-    private static void initItemColours(RegisterColorHandlersEvent.Item event) {
-        event.register(makeOpaque(new StaticItemColor(AEColor.TRANSPARENT)), AAEItems.THROUGHPUT_MONITOR.asItem());
-        event.register(
-                makeOpaque(new StaticItemColor(AEColor.TRANSPARENT)), AAEItems.QUANTUM_CRAFTER_TERMINAL.asItem());
-        for (var item : AAEItems.getQuantumArmor()) {
-            event.register(
-                    (stack, index) -> index == 1
-                            ? LibTags.getIntOrDefault(stack, LibTags.TINT_COLOR_TAG, Colors.PURPLE.argb())
-                            : Colors.WHITE.argb(),
-                    item);
-        }
-
-        for (var bucket : AAEFluids.INSTANCE.getFluids()) {
-            event.getItemColors().register(AAEFluids::getFluidColor, bucket.bucketItem());
-        }
+    private static void initArmorRenderers(EntityRenderersEvent.AddLayers event) {
+        GeoArmorRenderer.registerArmorRenderer(
+                QuantumArmorBase.class,
+                QuantumArmorRenderer::new);
     }
 
     private static void initRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(AAEBlockEntities.REACTION_CHAMBER.get(), ReactionChamberTESR::new);
+
     }
 
     private static ItemColor makeOpaque(ItemColor itemColor) {

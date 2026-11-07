@@ -390,14 +390,7 @@ public class AdvCraftingCPUCluster implements IAECluster {
     public void updateName() {
         this.myName = null;
         for (AdvCraftingBlockEntity te : this.blockEntities) {
-
-            if (te.hasCustomName()) {
-                if (this.myName != null) {
-                    this.myName.copy().append(" ").append(te.getCustomName());
-                } else {
-                    this.myName = te.getCustomName().copy();
-                }
-            }
+            // Custom CPU naming differs in AE2 1.18 and is optional
         }
     }
 

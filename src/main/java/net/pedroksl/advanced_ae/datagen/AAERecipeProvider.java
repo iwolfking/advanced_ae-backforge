@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.datagen;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -22,7 +23,6 @@ import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
 import net.pedroksl.advanced_ae.AdvancedAE;
 import net.pedroksl.advanced_ae.common.definitions.*;
 import net.pedroksl.advanced_ae.recipes.ReactionChamberRecipeBuilder;
-import net.pedroksl.advanced_ae.xmod.Addons;
 import net.pedroksl.ae2addonlib.registry.helpers.LibBlockDefinition;
 import net.pedroksl.ae2addonlib.registry.helpers.LibItemDefinition;
 
@@ -155,23 +155,6 @@ public class AAERecipeProvider extends RecipeProvider {
                 .define('E', AEItems.ENGINEERING_PROCESSOR)
                 .unlockedBy("hasItem", has(AEItems.BLANK_PATTERN))
                 .save(c, AdvancedAE.makeId("advpartenc"));
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, AAEItems.ADV_PATTERN_PROVIDER_UPGRADE)
-                .pattern("IR")
-                .pattern("EL")
-                .define('I', Tags.Items.INGOTS)
-                .define('R', Items.REDSTONE)
-                .define('E', Items.ENDER_PEARL)
-                .define('L', AEItems.LOGIC_PROCESSOR)
-                .unlockedBy("hasItem", has(AEItems.BLANK_PATTERN))
-                .save(c, AdvancedAE.makeId("smallappupgrade"));
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, AAEItems.ADV_PATTERN_PROVIDER_CAPACITY_UPGRADE)
-                .pattern("IC")
-                .pattern("CE")
-                .define('I', Tags.Items.INGOTS)
-                .define('C', AEItems.CAPACITY_CARD)
-                .define('E', AEItems.ENGINEERING_PROCESSOR)
-                .unlockedBy("hasItem", has(AAEBlocks.ADV_PATTERN_PROVIDER))
-                .save(c, AdvancedAE.makeId("largeappupgrade"));
         ReactionChamberRecipeBuilder.react(AAEItems.SHATTERED_SINGULARITY, 2, 200000)
                 .input(AEItems.SINGULARITY)
                 .input(ConventionTags.ENDER_PEARL_DUST, 2)

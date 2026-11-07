@@ -33,13 +33,13 @@ public class StockExportBusMenu extends UpgradeableMenu<StockExportBusPart> impl
 
     @Override
     protected void setupConfig() {
-        this.addExpandableConfigSlots((this.getHost()).getConfig(), 2, 9, 5);
+        this.addExpandableConfigSlots(this.getHost().getConfig(), 1, 9, 0);
     }
 
     @Override
     public boolean isSlotEnabled(int idx) {
-        int upgrades = this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD);
-        return upgrades > idx;
+        int capacityUpgrades = this.getUpgrades().getInstalledUpgrades(AEItems.CAPACITY_CARD);
+        return idx < capacityUpgrades;
     }
 
     public boolean isConfigSlot(Slot slot) {

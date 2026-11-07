@@ -21,7 +21,7 @@ public class AAEClientPlayerEvents {
     }
 
     public static void playerRender(RenderPlayerEvent.Pre event) {
-        Player player = event.getEntity();
+        Player player = (Player) event.getEntity();
 
         if (!(player instanceof ServerPlayer)) {
             var renderer = event.getRenderer();

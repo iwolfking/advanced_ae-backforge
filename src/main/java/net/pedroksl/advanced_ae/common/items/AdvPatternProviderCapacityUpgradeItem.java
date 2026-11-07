@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -96,7 +97,7 @@ public class AdvPatternProviderCapacityUpgradeItem extends BlockUpgradeItem {
             ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
 
-        pTooltipComponents.add(Component.empty()
+        pTooltipComponents.add(new TextComponent("")
                 .append(AAEText.PatternProviderCapacityUpgrade.text().withStyle(AAEText.TOOLTIP_DEFAULT_COLOR)));
     }
 }

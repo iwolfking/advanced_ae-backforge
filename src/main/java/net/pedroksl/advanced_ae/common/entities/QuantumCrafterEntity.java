@@ -14,7 +14,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.inventory.TransientCraftingContainer;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -187,6 +187,10 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
     }
 
     @Override
+    public BlockOrientation getOrientation() {
+        return appeng.api.orientation.BlockOrientation.get(Direction.NORTH);
+    }
+
     public Set<Direction> getGridConnectableSides(BlockOrientation orientation) {
         return EnumSet.allOf(Direction.class);
     }
@@ -855,7 +859,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
         if (mode == SettingsFrom.MEMORY_CARD) {
             var outputs = getAllowedOutputs();
             var sides = new IntArrayTag(outputs.stream()
-                    .map(o -> o.getUnrotatedSide().get3DDataValue())
+                    .map(o -> o.ordinal())
                     .toList());
             output.put(NBT_ALLOWED_SIDES, sides);
 
@@ -877,7 +881,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
 
                         var outputs = EnumSet.noneOf(RelativeSide.class);
                         for (var item : list) {
-                            outputs.add(RelativeSide.fromUnrotatedSide(Direction.from3DDataValue(item.getAsInt())));
+                            if (item.getAsInt() >= 0 && item.getAsInt() < RelativeSide.values().length) outputs.add(RelativeSide.values()[item.getAsInt()]);
                         }
                         host.updateOutputSides(outputs);
                     }
@@ -889,7 +893,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
     }
 
     private void importPatterns(@Nullable Player player, CompoundTag input) {
-        if (player != null && input.contains(NBT_MEMORY_CARD_PATTERNS) && !player.level().isClientSide) {
+        if (player != null && input.contains(NBT_MEMORY_CARD_PATTERNS) && !player.level.isClientSide) {
             clearPatternInventory(player);
 
             var desiredPatterns = new AppEngInternalInventory(this.patternInv.size());
@@ -933,8 +937,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
 
             // Warn about not being able to restore all patterns due to lack of blank patterns
             if (blankPatternsUsed > blankPatternsAvailable) {
-                player.sendSystemMessage(
-                        PlayerMessages.MissingBlankPatterns.text(blankPatternsUsed - blankPatternsAvailable));
+                player.sendMessage(PlayerMessages.MissingBlankPatterns.text(blankPatternsUsed - blankPatternsAvailable), player.getUUID());
             }
         }
     }
@@ -1174,7 +1177,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
         private final List<Long> keepMinInput;
         public long limitMaxOutput;
         private final CraftingContainer testFrame =
-                new TransientCraftingContainer(new AutoCraftingMenu(), GRID_SIZE, GRID_SIZE);
+                new CraftingContainer(new AutoCraftingMenu(), GRID_SIZE, GRID_SIZE);
 
         public boolean consumesDurability = false;
         public HashMap<AEItemKey, Integer> keysThatConsumeDurability = new HashMap<>();
@@ -1225,7 +1228,9 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
 
                     if (!this.hasDataChange) {
                         ItemStack outputStack = findMatchingOutput(in);
-                        if (!ItemStack.isSameItemSameTags(inStack.copyWithCount(outputStack.getCount()), outputStack)) {
+                        ItemStack expectedStack = inStack.copy();
+                        expectedStack.setCount(outputStack.getCount());
+                        if (!ItemStack.isSameItemSameTags(expectedStack, outputStack)) {
                             this.hasDataChange = true;
                             break;
                         }
@@ -1452,7 +1457,7 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
 
                 if (condensedItemList.containsKey(item.getItem())) {
                     condensedItemList.computeIfPresent(
-                            item.getItem(), (k, current) -> item.copyWithCount(current.getCount() + item.getCount()));
+                            item.getItem(), (k, current) -> { var s = item.copy(); s.setCount(current.getCount() + item.getCount()); return s; });
                 } else {
                     condensedItemList.put(item.getItem(), item);
                 }
@@ -1463,7 +1468,9 @@ public class QuantumCrafterEntity extends AENetworkPowerBlockEntity
                 if (bucketsToRemove > 0 && entry.getKey() == Items.BUCKET) {
                     var bucketCount = Math.max(0, entry.getValue().getCount() - bucketsToRemove);
                     if (bucketCount > 0) {
-                        finalList.add(entry.getValue().copyWithCount(bucketCount));
+                        var bucketStack = entry.getValue().copy();
+                    bucketStack.setCount(bucketCount);
+                    finalList.add(bucketStack);
                     }
                 } else {
                     finalList.add(entry.getValue().copy());

@@ -13,7 +13,7 @@ import net.minecraft.core.Direction;
 import net.pedroksl.advanced_ae.common.logic.AdvPatternProviderLogicHost;
 
 import appeng.api.networking.IManagedGridNode;
-import appeng.helpers.patternprovider.PatternProviderLogic;
+import appeng.helpers.iface.PatternProviderLogic;
 
 @Mixin(value = PatternProviderLogic.class, remap = false)
 public class MixinPatternProviderLogic {

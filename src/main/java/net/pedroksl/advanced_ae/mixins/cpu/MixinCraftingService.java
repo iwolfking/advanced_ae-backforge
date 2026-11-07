@@ -47,8 +47,8 @@ public class MixinCraftingService {
     @Unique
     private long advancedAE$latestChange;
 
-    @Shadow
-    private long lastProcessedCraftingLogicChangeTick;
+//    @Shadow
+//    private long lastProcessedCraftingLogicChangeTick;
 
     @Final
     @Shadow
@@ -78,13 +78,8 @@ public class MixinCraftingService {
     @Inject(
             method = "onServerEndTick",
             at =
-                    @At(
-                            value = "FIELD",
-                            target = "Lappeng/me/service/CraftingService;lastProcessedCraftingLogicChangeTick:J",
-                            opcode = Opcodes.GETFIELD,
-                            ordinal = 0),
-            locals = LocalCapture.CAPTURE_FAILHARD)
-    private void tickAdvClusters1(CallbackInfo ci, long latestChange) {
+            @At("TAIL"))
+    private void tickAdvClusters1(CallbackInfo ci) {
         long latestChangeLocal = 0;
         for (var cluster : this.advancedAE$advCraftingCPUClusters) {
             if (cluster != null) {
@@ -94,11 +89,11 @@ public class MixinCraftingService {
                 }
             }
         }
-
-        if (latestChangeLocal > latestChange) {
-            // our crafting CPUs did something, fire notifications
-            this.lastProcessedCraftingLogicChangeTick = -1;
-        }
+//
+//        if (latestChangeLocal > latestChange) {
+//            // our crafting CPUs did something, fire notifications
+//            this.lastProcessedCraftingLogicChangeTick = -1;
+//        }
     }
 
     @Inject(
@@ -107,7 +102,7 @@ public class MixinCraftingService {
                     @At(
                             value = "FIELD",
                             target =
-                                    "Lappeng/me/service/CraftingService;interests:Lcom/google/common/collect/Multimap;",
+                                    "Lappeng/me/service/CraftingService;interestManager:Lappeng/me/helpers/InterestManager;",
                             opcode = Opcodes.GETFIELD,
                             ordinal = 0))
     private void tickAdvClusters2(CallbackInfo ci) {
@@ -128,7 +123,7 @@ public class MixinCraftingService {
     }
 
     @Inject(method = "addNode", at = @At("TAIL"))
-    private void onAddNode(IGridNode gridNode, CompoundTag savedData, CallbackInfo ci) {
+    private void onAddNode(IGridNode gridNode, CallbackInfo ci) {
         if (gridNode.getOwner() instanceof AdvCraftingBlockEntity) {
             this.updateList = true;
         }
@@ -175,7 +170,7 @@ public class MixinCraftingService {
     }
 
     @Inject(
-            method = "submitJob",
+            method = "trySubmitJob",
             at =
                     @At(
                             value = "INVOKE_ASSIGN",

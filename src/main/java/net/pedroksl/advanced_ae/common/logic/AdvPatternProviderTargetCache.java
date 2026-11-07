@@ -18,19 +18,19 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.storage.MEStorage;
 import appeng.capabilities.Capabilities;
-import appeng.helpers.patternprovider.PatternProviderTarget;
+import appeng.helpers.iface.PatternProviderTarget;
 import appeng.me.storage.CompositeStorage;
 import appeng.parts.automation.StackWorldBehaviors;
 import appeng.util.BlockApiCache;
 
 class AdvPatternProviderTargetCache {
-    private final BlockApiCache<MEStorage> cache;
+    private final BlockApiCache<appeng.api.storage.IStorageMonitorableAccessor> cache;
     private final Direction direction;
     private final IActionSource src;
     private final HashMap<Direction, Map<AEKeyType, ExternalStorageStrategy>> strategiesMap = new HashMap<>();
 
     AdvPatternProviderTargetCache(ServerLevel l, BlockPos pos, Direction direction, IActionSource src) {
-        this.cache = BlockApiCache.create(Capabilities.STORAGE, l, pos);
+        this.cache = BlockApiCache.create(Capabilities.STORAGE_MONITORABLE_ACCESSOR, l, pos);
         this.direction = direction;
         this.src = src;
         for (Direction dir : Direction.values()) {
@@ -42,9 +42,9 @@ class AdvPatternProviderTargetCache {
     PatternProviderTarget find(Direction fromSide) {
         // our capability first: allows any storage channel
         Direction side = fromSide == null ? direction : fromSide;
-        var meStorage = cache.find(side);
-        if (meStorage != null) {
-            return wrapMeStorage(meStorage);
+        var accessor = cache.find(side);
+        if (accessor != null) {
+            return wrapMeStorage(accessor.getInventory(src));
         }
 
         // otherwise fall back to the platform capability

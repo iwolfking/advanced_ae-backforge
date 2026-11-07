@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.common.items.armors;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -18,6 +19,8 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,18 +33,13 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.pedroksl.advanced_ae.client.AAEHotkeys;
-import net.pedroksl.advanced_ae.client.renderer.QuantumArmorRenderer;
 import net.pedroksl.advanced_ae.common.definitions.*;
 import net.pedroksl.advanced_ae.common.helpers.AAEColor;
 import net.pedroksl.advanced_ae.common.inventory.QuantumArmorMenuHost;
 import net.pedroksl.advanced_ae.common.items.upgrades.UpgradeType;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.apoth.ApoEnchPlugin;
-import net.pedroksl.advanced_ae.xmod.mekansim.MekanismPlugin;
 import net.pedroksl.ae2addonlib.registry.helpers.ICreativeTabItem;
 
 import appeng.api.implementations.menuobjects.IMenuItem;
@@ -50,19 +48,14 @@ import appeng.core.localization.GuiText;
 import appeng.core.localization.Tooltips;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
+import software.bernie.geckolib3.core.IAnimatable;
+import software.bernie.geckolib3.core.manager.AnimationFactory;
 
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.PlayState;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem, IUpgradeableItem, ICreativeTabItem {
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+public class QuantumArmorBase extends PoweredItem implements IMenuItem, IUpgradeableItem, ICreativeTabItem, IAnimatable {
+
+    private final AnimationFactory factory =
+            new AnimationFactory(this);
 
     protected static final int DEFAULT_TINT_COLOR = AAEColor.PURPLE.argb();
 
@@ -89,8 +82,8 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
         }
     }
 
-    public QuantumArmorBase(ArmorMaterial material, Type type, Properties properties, DoubleSupplier powerCapacity) {
-        super(material, type, properties.fireResistant().rarity(Rarity.EPIC).stacksTo(1), powerCapacity);
+    public QuantumArmorBase(ArmorMaterial material, EquipmentSlot slot, Properties properties, DoubleSupplier powerCapacity) {
+        super(material, slot, properties.fireResistant().rarity(Rarity.EPIC).stacksTo(1), powerCapacity);
     }
 
     protected void registerUpgrades(UpgradeType... upgrades) {
@@ -110,13 +103,6 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
     public void setTintColor(Player player, ItemStack stack, int color) {
         stack.getOrCreateTag().putInt(AAENbt.TINT_COLOR_TAG, color);
 
-        if (player.level().isClientSide()) {
-            var renderer = IClientItemExtensions.of(stack)
-                    .getHumanoidArmorModel(player, stack, stack.getEquipmentSlot(), null);
-            if (renderer instanceof QuantumArmorRenderer quantumRenderer) {
-                quantumRenderer.setTintColor(color);
-            }
-        }
     }
 
     @Override
@@ -140,11 +126,11 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
             lines.add(Tooltips.of(GuiText.Linked, Tooltips.GREEN));
         }
 
-        lines.add(Component.empty());
+        lines.add(new TextComponent(""));
         lines.add(AAEText.QuantumArmorTooltip.text().withStyle(Tooltips.NORMAL_TOOLTIP_TEXT));
         for (var upgrade : possibleUpgrades) {
             var upgradeComponent =
-                    Component.translatable(upgrade.item().asItem().getDescriptionId());
+                    new TranslatableComponent(upgrade.item().get().getDescriptionId());
             if (!hasUpgrade(stack, upgrade)) {
                 upgradeComponent.append(AAEText.UpgradeNotInstalled.text());
                 upgradeComponent.withStyle(Tooltips.MUTED_COLOR);
@@ -198,8 +184,8 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
                     int value = armor.getUpgradeValue(stack, UpgradeType.REACH, 0);
                     var att = new AttributeModifier(
                             REACH_MOD, "aae_reach_boost", value, AttributeModifier.Operation.ADDITION);
-                    builder.put(ForgeMod.BLOCK_REACH.get(), att);
-                    builder.put(ForgeMod.ENTITY_REACH.get(), att);
+                    builder.put(ForgeMod.REACH_DISTANCE.get(), att);
+                    builder.put(ForgeMod.REACH_DISTANCE.get(), att);
                 }
             }
             case FEET -> {
@@ -233,10 +219,6 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
 
     @Override
     public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-        if (Addons.APOTHIC_ENCHANTING.isLoaded()) {
-            if (ApoEnchPlugin.isSameAs(enchantment, ApoEnchPlugin.Enchantment.STABLE_FOOTING)) return false;
-        }
-
         return super.canApplyAtEnchantingTable(stack, enchantment);
     }
 
@@ -246,7 +228,7 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
 
     public boolean openFromEquipmentSlot(
             Player player, int inventorySlot, ItemStack stack, boolean returningFromSubmenu) {
-        if (!player.level().isClientSide() && checkPreconditions(stack)) {
+        if (!player.level.isClientSide() && checkPreconditions(stack)) {
             return MenuOpener.open(
                     AAEMenus.QUANTUM_ARMOR_CONFIG.get(),
                     player,
@@ -263,57 +245,6 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
             consumeEnergy(player, stack, amount);
         }
         return 0;
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private QuantumArmorRenderer renderer;
-
-            @Override
-            public @NotNull HumanoidModel<?> getHumanoidArmorModel(
-                    LivingEntity livingEntity,
-                    ItemStack itemStack,
-                    EquipmentSlot equipmentSlot,
-                    HumanoidModel<?> original) {
-                if (this.renderer == null) this.renderer = new QuantumArmorRenderer();
-
-                this.renderer.setTintColor(getTintColor(itemStack));
-
-                this.renderer.prepForRender(livingEntity, itemStack, equipmentSlot, original);
-
-                return this.renderer;
-            }
-        });
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<GeoAnimatable>(this, 20, state -> {
-            state.getController().setAnimation(RawAnimation.begin().thenLoop("animation.quantum_armor.idle"));
-            Entity entity = state.getData(DataTickets.ENTITY);
-            if (!(entity instanceof Player player)) return PlayState.CONTINUE;
-
-            Set<Item> wornArmor = new ObjectOpenHashSet<>();
-            for (ItemStack stack : player.getArmorSlots()) {
-                if (stack.isEmpty()) return PlayState.STOP;
-
-                wornArmor.add(stack.getItem());
-            }
-
-            boolean isFullSet = wornArmor.containsAll(ObjectArrayList.of(
-                    AAEItems.QUANTUM_BOOTS.get(),
-                    AAEItems.QUANTUM_LEGGINGS.get(),
-                    AAEItems.QUANTUM_CHESTPLATE.get(),
-                    AAEItems.QUANTUM_HELMET.get()));
-
-            return isFullSet ? PlayState.CONTINUE : PlayState.STOP;
-        }));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.cache;
     }
 
     @Override
@@ -337,13 +268,11 @@ public class QuantumArmorBase extends PoweredItem implements GeoItem, IMenuItem,
 
     @Override
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        if (Addons.MEKANISM.isLoaded()) {
-            var cap = MekanismPlugin.attachCapability(stack);
-            if (cap != null) {
-                return cap;
-            }
-        }
-
         return super.initCapabilities(stack, nbt);
     }
+    @Override
+    public void registerControllers(software.bernie.geckolib3.core.manager.AnimationData data) {
+    }
+
+    public AnimationFactory getFactory() { return this.factory; }
 }

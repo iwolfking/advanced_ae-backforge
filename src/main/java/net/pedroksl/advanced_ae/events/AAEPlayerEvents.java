@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.events;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,8 +21,6 @@ import net.pedroksl.advanced_ae.common.items.upgrades.UpgradeType;
 import net.pedroksl.advanced_ae.network.AAENetworkHandler;
 import net.pedroksl.advanced_ae.network.packet.ItemTrackingPacket;
 import net.pedroksl.advanced_ae.network.packet.KeysPressedPacket;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.apoth.ApoEnchPlugin;
 
 public class AAEPlayerEvents {
     public static final String NO_KEY_DATA = "aae$nokey";
@@ -37,10 +36,9 @@ public class AAEPlayerEvents {
 
     @SuppressWarnings("deprecation")
     public static void breakSpeed(PlayerEvent.BreakSpeed event) {
-        Player player = event.getEntity();
-        if (!player.onGround()) {
-            if (!Addons.APOTHIC_ENCHANTING.isLoaded()
-                    || !ApoEnchPlugin.checkForEnchant(player, ApoEnchPlugin.Enchantment.STABLE_FOOTING)) {
+        Player player = (Player) event.getEntity();
+        if (!player.isOnGround()) {
+            if (true) {
                 ItemStack armor = player.getItemBySlot(EquipmentSlot.CHEST);
                 if (armor.getItem() instanceof QuantumChestplate) {
                     var newValue = Math.min(Float.MAX_VALUE, event.getOriginalSpeed() * 5);
@@ -66,8 +64,7 @@ public class AAEPlayerEvents {
 
         Player player = event.player;
 
-        if (!(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof QuantumArmorBase)
-                && player.getPersistentData().getBoolean("aaeFlightCard")) {
+        if (false && player.getPersistentData().getBoolean("aaeFlightCard")) {
             player.getAbilities().mayfly = false;
             player.getAbilities().flying = false;
             player.getPersistentData().remove("aaeFlightCard");
@@ -165,8 +162,7 @@ public class AAEPlayerEvents {
 
     public static void onStartTracking(PlayerEvent.StartTracking event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer
-                && event.getTarget() instanceof ItemEntity item
-                && ((ItemEntity) event.getTarget()).thrower != null) {
+                && event.getTarget() instanceof ItemEntity item) {
             AAENetworkHandler.INSTANCE.sendTo(new ItemTrackingPacket(item), serverPlayer);
         }
     }

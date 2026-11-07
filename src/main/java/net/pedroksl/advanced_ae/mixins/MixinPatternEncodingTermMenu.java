@@ -43,10 +43,10 @@ public class MixinPatternEncodingTermMenu extends MEStorageMenu {
             CallbackInfoReturnable<ItemStack> cir, GenericStack[] in, boolean v, GenericStack[] out) {
         if (this.encodedPatternSlot.hasItem()) {
             var encodedPattern = this.encodedPatternSlot.getItem();
-            if (encodedPattern.is(AAEItems.ADV_PROCESSING_PATTERN.asItem())) {
+            if (encodedPattern.is(AAEItems.ADV_PROCESSING_PATTERN.get())) {
 
                 var advPattern = AdvPatternDetailsDecoder.INSTANCE.decodePattern(
-                        encodedPattern, this.getPlayerInventory().player.level(), false);
+                        encodedPattern, this.getPlayerInventory().player.level, false);
 
                 if (advPattern != null) {
                     var dirMap = ((AdvProcessingPattern) advPattern).getDirectionMap();

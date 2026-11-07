@@ -37,8 +37,4 @@ public class AdvProcessingPattern extends AEProcessingPattern implements AdvPatt
         return this.dirMap.get(key);
     }
 
-    @Override
-    public void pushInputsToExternalInventory(KeyCounter[] inputHolder, IPatternDetails.PatternInputSink inputSink) {
-        super.pushInputsToExternalInventory(inputHolder, inputSink);
-    }
 }

@@ -1,5 +1,6 @@
 package net.pedroksl.advanced_ae.gui.advpatternprovider;
 
+import appeng.helpers.iface.PatternProviderLogic;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.pedroksl.advanced_ae.api.AAESettings;
@@ -12,7 +13,7 @@ import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
 import appeng.api.stacks.GenericStack;
 import appeng.helpers.externalstorage.GenericStackInv;
-import appeng.helpers.patternprovider.PatternProviderReturnInventory;
+import appeng.helpers.iface.PatternProviderReturnInventory;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;

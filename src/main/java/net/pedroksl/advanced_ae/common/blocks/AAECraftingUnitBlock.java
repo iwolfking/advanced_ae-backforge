@@ -33,7 +33,7 @@ public class AAECraftingUnitBlock extends AAEAbstractCraftingUnitBlock<AdvCrafti
     }
 
     public static Properties getProps(ICraftingUnitType type, boolean formed) {
-        var props = type == AAECraftingUnitType.STRUCTURE ? glassProps() : metalProps();
+        var props = type == AAECraftingUnitType.STRUCTURE ? appeng.block.AEBaseBlock.defaultProps(net.minecraft.world.level.material.Material.GLASS) : appeng.block.AEBaseBlock.defaultProps(net.minecraft.world.level.material.Material.METAL);
         if (type == AAECraftingUnitType.QUANTUM_CORE || type == AAECraftingUnitType.STRUCTURE) {
             props.lightLevel(state -> state.getValue(AAEAbstractCraftingUnitBlock.LIGHT_LEVEL));
             props.noOcclusion();

@@ -35,8 +35,6 @@ public class PatternSlot extends AppEngSlot {
     public PatternSlot(AutoCrafterContainerRecord machineInv, int machineInvSlot, int x, int y) {
         super(machineInv.getInventory(), machineInvSlot);
         this.machineInv = machineInv;
-        this.x = x;
-        this.y = y;
     }
 
     @Override
@@ -72,7 +70,6 @@ public class PatternSlot extends AppEngSlot {
     @Override
     public final void set(ItemStack stack) {}
 
-    @Override
     public void initialize(ItemStack stack) {}
 
     @Override

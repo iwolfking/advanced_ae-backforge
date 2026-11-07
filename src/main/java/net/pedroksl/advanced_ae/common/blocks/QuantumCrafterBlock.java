@@ -1,5 +1,7 @@
 package net.pedroksl.advanced_ae.common.blocks;
 
+import net.pedroksl.advanced_ae.common.definitions.AAEBlockEntities;
+
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -16,8 +18,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.entities.QuantumCrafterEntity;
 
-import appeng.api.orientation.IOrientationStrategy;
-import appeng.api.orientation.OrientationStrategies;
 import appeng.block.AEBaseEntityBlock;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
@@ -27,7 +27,7 @@ public class QuantumCrafterBlock extends AEBaseEntityBlock<QuantumCrafterEntity>
     public static final BooleanProperty WORKING = BooleanProperty.create("working");
 
     public QuantumCrafterBlock() {
-        super(metalProps());
+        super(appeng.block.AEBaseBlock.defaultProps(net.minecraft.world.level.material.Material.METAL));
         this.registerDefaultState(this.defaultBlockState().setValue(WORKING, false));
     }
 
@@ -66,8 +66,10 @@ public class QuantumCrafterBlock extends AEBaseEntityBlock<QuantumCrafterEntity>
         return super.use(state, level, pos, player, hand, hitResult);
     }
 
+
     @Override
-    public IOrientationStrategy getOrientationStrategy() {
-        return OrientationStrategies.full();
+    public net.minecraft.world.level.block.entity.BlockEntity newBlockEntity(
+            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        return AAEBlockEntities.QUANTUM_CRAFTER.get().create(pos, state);
     }
 }

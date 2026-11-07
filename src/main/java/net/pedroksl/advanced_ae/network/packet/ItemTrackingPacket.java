@@ -21,9 +21,9 @@ public class ItemTrackingPacket extends AddonPacket {
     }
 
     public ItemTrackingPacket(ItemEntity item) {
-        this.thrower = item.thrower;
+        this.thrower = item.getThrower();
         this.entityId = item.getId();
-        this.pickupDelay = item.pickupDelay;
+        this.pickupDelay = 0;
     }
 
     @Override
@@ -35,10 +35,10 @@ public class ItemTrackingPacket extends AddonPacket {
 
     @Override
     public void clientPacketData(Player player) {
-        if (player != null && player.level() != null) {
-            Entity entity = player.level().getEntity(this.entityId);
+        if (player != null && player.level != null) {
+            Entity entity = player.level.getEntity(this.entityId);
             if (entity instanceof ItemEntity) {
-                ((ItemEntity) entity).thrower = this.thrower;
+                ((ItemEntity) entity).setThrower(this.thrower);
                 ((ItemEntity) entity).setPickUpDelay(this.pickupDelay);
             }
         }

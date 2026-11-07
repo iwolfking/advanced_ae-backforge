@@ -56,7 +56,6 @@ public class AdvCraftingCPU implements ICraftingCPU {
         }
     }
 
-    @Override
     public void cancelJob() {
         if (this.uniqueId == null) {
             return;

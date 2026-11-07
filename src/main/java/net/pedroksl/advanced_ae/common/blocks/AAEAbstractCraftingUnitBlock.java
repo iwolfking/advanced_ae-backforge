@@ -1,5 +1,7 @@
 package net.pedroksl.advanced_ae.common.blocks;
 
+import net.pedroksl.advanced_ae.common.definitions.AAEBlockEntities;
+
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.jetbrains.annotations.NotNull;
@@ -108,5 +110,11 @@ public abstract class AAEAbstractCraftingUnitBlock<T extends AEBaseBlockEntity> 
         }
 
         return super.use(state, level, pos, player, hand, hit);
+    }
+
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity newBlockEntity(
+            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        return AAEBlockEntities.QUANTUM_COMPUTER_CORE.get().create(pos, state);
     }
 }

@@ -15,5 +15,4 @@ public interface AdvPatternDetails {
 
     Direction getDirectionSideForInputKey(AEKey key);
 
-    void pushInputsToExternalInventory(KeyCounter[] inputHolder, IPatternDetails.PatternInputSink inputSink);
 }

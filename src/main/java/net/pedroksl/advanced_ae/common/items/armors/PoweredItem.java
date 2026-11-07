@@ -11,6 +11,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.*;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -30,17 +31,18 @@ public class PoweredItem extends ArmorItem implements IAEItemPowerStorage {
     private final DoubleSupplier powerCapacity;
     private PoweredItemCapabilities cap;
 
-    public PoweredItem(ArmorMaterial material, Type type, Properties properties, DoubleSupplier powerCapacity) {
-        super(material, type, properties);
+    public PoweredItem(ArmorMaterial material, EquipmentSlot slot, Properties properties, DoubleSupplier powerCapacity) {
+        super(material, slot, properties);
         this.powerCapacity = powerCapacity;
     }
 
-    public void addToMainCreativeTab(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
-        output.accept(this);
+    public void addToMainCreativeTab(Object parameters, Object output) {
+        java.util.function.Consumer<ItemStack> out = (java.util.function.Consumer<ItemStack>) output;
+        out.accept(new ItemStack(this));
 
         var charged = new ItemStack(this, 1);
         injectAEPower(charged, getAEMaxPower(charged), Actionable.MODULATE);
-        output.accept(charged);
+        out.accept(charged);
     }
 
     @OnlyIn(Dist.CLIENT)

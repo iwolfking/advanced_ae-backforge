@@ -5,14 +5,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.pedroksl.advanced_ae.common.definitions.AAEFluids;
 
 public abstract class QuantumInfusionFluid extends ForgeFlowingFluid {
     public static final ForgeFlowingFluid.Properties PROPERTIES = new ForgeFlowingFluid.Properties(
-                    AAEFluids.QUANTUM_INFUSION::fluidType,
                     AAEFluids.QUANTUM_INFUSION::flowing,
-                    AAEFluids.QUANTUM_INFUSION::source)
+                    AAEFluids.QUANTUM_INFUSION::source,
+                    FluidAttributes.builder(
+                            new ResourceLocation("minecraft:block/water_still"),
+                            new ResourceLocation("minecraft:block/water_flow"))
+                    .color(0xFF7362D3))
             .bucket(AAEFluids.QUANTUM_INFUSION::bucketItem)
             .block(AAEFluids.QUANTUM_INFUSION::block);
 
@@ -30,12 +35,10 @@ public abstract class QuantumInfusionFluid extends ForgeFlowingFluid {
         return AAEFluids.QUANTUM_INFUSION.source();
     }
 
-    @Override
     public Item getBucket() {
         return AAEFluids.QUANTUM_INFUSION.bucketItem();
     }
 
-    @Override
     protected boolean canConvertToSource(Level pLevel) {
         return false;
     }

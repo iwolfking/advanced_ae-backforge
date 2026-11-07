@@ -1,10 +1,10 @@
 package net.pedroksl.advanced_ae.client.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.fluids.FluidStack;
 import net.pedroksl.advanced_ae.common.definitions.AAEText;
@@ -48,12 +48,11 @@ public class ReactionChamberScreen extends UpgradeableScreen<ReactionChamberMenu
         this.pb = new ProgressBar(this.menu, style.getImage("progressBar"), ProgressBar.Direction.VERTICAL);
         widgets.add("progressBar", this.pb);
 
-        this.autoExportBtn = new ServerSettingToggleButton<>(Settings.AUTO_EXPORT, YesNo.NO);
-        this.addToLeftToolbar(autoExportBtn);
+        this.autoExportBtn = null;
 
         this.outputConfigure =
                 new ToolbarActionButton(AddonActionItems.DIRECTIONAL_OUTPUT, btn -> menu.configureOutput());
-        this.outputConfigure.setVisibility(getMenu().getAutoExport() == YesNo.YES);
+        if (this.outputConfigure != null) this.outputConfigure.setVisibility(true);
         this.addToLeftToolbar(this.outputConfigure);
 
         AddonActionButton clearBtn = new AddonActionButton(AddonActionItems.FLUID_FLUSH, btn -> menu.clearFluid());
@@ -68,11 +67,6 @@ public class ReactionChamberScreen extends UpgradeableScreen<ReactionChamberMenu
         widgets.add("clearFluidOut", clearOutBtn);
 
         this.powerAlert = new AlertWidget(style.getImage("powerAlert"));
-        this.powerAlert.setTooltip(Tooltip.create(Tooltips.of(
-                AAEText.InsufficientPower.text().withStyle(Tooltips.RED),
-                Component.literal("\n")
-                        .append(AAEText.InsufficientPowerDetails.text())
-                        .withStyle(Tooltips.NORMAL_TOOLTIP_TEXT))));
         this.widgets.add("powerAlert", this.powerAlert);
     }
 
@@ -103,19 +97,20 @@ public class ReactionChamberScreen extends UpgradeableScreen<ReactionChamberMenu
         super.updateBeforeRender();
 
         int progress = this.menu.getCurrentProgress() * 100 / this.menu.getMaxProgress();
-        this.pb.setFullMsg(Component.literal(progress + "%"));
+        this.pb.setFullMsg(new TextComponent(progress + "%"));
 
-        this.autoExportBtn.set(getMenu().getAutoExport());
-        this.outputConfigure.setVisibility(getMenu().getAutoExport() == YesNo.YES);
+        if (this.autoExportBtn != null) this.autoExportBtn.set(getMenu().getAutoExport());
+        if (this.outputConfigure != null) this.outputConfigure.setVisibility(getMenu().getAutoExport() == YesNo.YES);
 
-        this.inputSlot.setPosition(this.leftPos + INPUT_TANK_X, this.topPos + TANKS_Y);
-        this.outputSlot.setPosition(this.leftPos + OUTPUT_TANK_X, this.topPos + TANKS_Y);
+        this.inputSlot.x = this.leftPos + INPUT_TANK_X; this.inputSlot.y = this.topPos + TANKS_Y;
+        this.outputSlot.x = this.leftPos + OUTPUT_TANK_X; this.outputSlot.y = this.topPos + TANKS_Y;
 
         this.powerAlert.visible = this.getMenu().getShowWarning();
     }
 
     @Override
     public void updateFluidTankContents(int index, FluidStack stack) {
+        this.menu.setClientFluid(index, stack);
         if (index == 1) {
             this.inputSlot.setFluidStack(stack);
         } else {
@@ -128,16 +123,18 @@ public class ReactionChamberScreen extends UpgradeableScreen<ReactionChamberMenu
         private final Blitter powerAlert;
 
         public AlertWidget(Blitter powerAlert) {
-            super(0, 0, 18, 18, Component.empty());
+            super(0, 0, 18, 18, new TextComponent(""));
             this.powerAlert = powerAlert;
         }
 
-        @Override
-        protected void renderWidget(GuiGraphics guiGraphics, int i, int i1, float v) {
-            this.powerAlert.dest(this.getX(), this.getY()).blit(guiGraphics);
+        public void renderButton(PoseStack guiGraphics, int i, int i1, float v) {
+            this.powerAlert.dest(this.x, this.y).blit(guiGraphics, 255);
         }
 
-        @Override
         protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {}
+
+        public void updateNarration(NarrationElementOutput narrationElementOutput) {
+            this.defaultButtonNarrationText(narrationElementOutput);
+        }
     }
 }

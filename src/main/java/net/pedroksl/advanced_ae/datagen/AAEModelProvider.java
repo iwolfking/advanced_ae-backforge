@@ -21,8 +21,6 @@ public class AAEModelProvider extends AE2AddonModelProvider {
     @Override
     protected void registerStatesAndModels() {
         basicItem(AAEItems.ADV_PROCESSING_PATTERN);
-        basicItem(AAEItems.ADV_PATTERN_PROVIDER_UPGRADE);
-        basicItem(AAEItems.ADV_PATTERN_PROVIDER_CAPACITY_UPGRADE);
         basicItem(AAEItems.ADV_PATTERN_ENCODER);
         basicItem(AAEItems.SHATTERED_SINGULARITY);
         basicItem(AAEItems.QUANTUM_INFUSED_DUST);

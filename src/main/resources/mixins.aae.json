@@ -7,20 +7,12 @@
   "compatibilityLevel": "JAVA_11",
   "mixins": [
     "MixinIOBusPartInvoker",
-    "MixinPatternEncodingTermMenu",
-    "MixinPatternProviderLogic",
-    "appflux.MixinAdvPatternProviderLogic",
-    "appflux.MixinAdvPatternProviderLogicHost",
-    "appflux.MixinAdvPatternProviderMenu",
-    "client.BuiltInModelHooksAccessor",
-    "client.ModelBakeryMixin",
+    "PatternProviderLogicAccessor",
     "cpu.MixinCraftingCPUMenu",
-    "cpu.MixinCraftingService",
-    "eae.MixinContainerPatternModifier"
+    "cpu.MixinCraftingService"
   ],
   "client": [
-    "appflux.MixinAdvPatternProviderScreen",
-    "appflux.MixinSmallAdvPatternProviderScreen"
+    "AbstractContainerScreenAccessor"
   ],
   "server": []
 }

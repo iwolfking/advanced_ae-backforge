@@ -86,7 +86,7 @@ public class QuantumCrafterConfigPatternMenu extends AEBaseMenu implements ISubM
     }
 
     public Level getLevel() {
-        return this.getPlayerInventory().player.level();
+        return this.getPlayerInventory().player.level;
     }
 
     public void setStockAmount(int inputIndex, long amount) {

@@ -4,12 +4,12 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.pedroksl.advanced_ae.client.gui.SmallAdvPatternProviderScreen;
 
-import appeng.api.client.AEKeyRendering;
 import appeng.api.config.LockCraftingMode;
 import appeng.api.stacks.AmountFormat;
 import appeng.client.Point;
@@ -54,7 +54,7 @@ public class SmallAdvPatternProviderLockReason implements ICompositeWidget {
     }
 
     @Override
-    public void drawForegroundLayer(GuiGraphics guiGraphics, Rect2i bounds, Point mouse) {
+    public void drawForegroundLayer(PoseStack guiGraphics, int ignored, Rect2i bounds, Point mouse) {
         var menu = gui.getMenu();
 
         Icon icon;
@@ -67,8 +67,8 @@ public class SmallAdvPatternProviderLockReason implements ICompositeWidget {
             lockStatusText = GuiText.CraftingLockIsLocked.text().withStyle(ChatFormatting.DARK_RED);
         }
 
-        icon.getBlitter().dest(x, y).blit(guiGraphics);
-        guiGraphics.drawString(Minecraft.getInstance().font, lockStatusText, x + 15, y + 5, -1, false);
+        icon.getBlitter().dest(x, y).blit(guiGraphics, 0);
+        Minecraft.getInstance().font.draw(guiGraphics, lockStatusText, x + 15, y + 5, -1);
     }
 
     @Nullable
@@ -86,12 +86,12 @@ public class SmallAdvPatternProviderLockReason implements ICompositeWidget {
                         Component stackName;
                         Component stackAmount;
                         if (stack != null) {
-                            stackName = AEKeyRendering.getDisplayName(stack.what());
+                            stackName = stack.what().getDisplayName();
                             stackAmount =
-                                    Component.literal(stack.what().formatAmount(stack.amount(), AmountFormat.FULL));
+                                    new TextComponent(stack.what().formatAmount(stack.amount(), AmountFormat.FULL));
                         } else {
-                            stackName = Component.literal("ERROR");
-                            stackAmount = Component.literal("ERROR");
+                            stackName = new TextComponent("ERROR");
+                            stackAmount = new TextComponent("ERROR");
                         }
                         yield InGameTooltip.CraftingLockedUntilResult.text(stackName, stackAmount);
                     }

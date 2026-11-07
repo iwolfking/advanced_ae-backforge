@@ -18,9 +18,6 @@ import net.pedroksl.advanced_ae.common.definitions.AAEMenus;
 import net.pedroksl.advanced_ae.common.helpers.StorageReader;
 import net.pedroksl.advanced_ae.common.helpers.StorageReaderImpl;
 import net.pedroksl.advanced_ae.mixins.MixinIOBusPartInvoker;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.appmek.AppMekPlugin;
-
 import appeng.api.behaviors.StackTransferContext;
 import appeng.api.config.Actionable;
 import appeng.api.config.Settings;
@@ -76,13 +73,13 @@ public class StockExportBusPart extends ExportBusPart implements ISubMenuHost {
     @Override
     public void readFromNBT(CompoundTag extra) {
         super.readFromNBT(extra);
-        this.config.readFromChildTag(extra, "extraConfig");
+        getConfig().readFromChildTag(extra, "extraConfig");
     }
 
     @Override
     public void writeToNBT(CompoundTag extra) {
         super.writeToNBT(extra);
-        this.config.writeToChildTag(extra, "extraConfig");
+        getConfig().writeToChildTag(extra, "extraConfig");
     }
 
     public ConfigInventory getConfig() {
@@ -108,10 +105,10 @@ public class StockExportBusPart extends ExportBusPart implements ISubMenuHost {
             this.storageReaders.add(StorageReaderImpl.item(level, fromPos, fromSide));
             this.storageReaders.add(StorageReaderImpl.fluid(level, fromPos, fromSide));
 
-            if (Addons.APPMEK.isLoaded()) {
-                this.storageReaders.add(
-                        AppMekPlugin.chemicalStorageReader(((ServerLevel) this.getLevel()), fromPos, fromSide));
-            }
+//            if (Addons.APPMEK.isLoaded()) {
+//                this.storageReaders.add(
+//                        AppMekPlugin.chemicalStorageReader(((ServerLevel) this.getLevel()), fromPos, fromSide));
+//            }
         }
         return storageReaders;
     }
@@ -149,7 +146,7 @@ public class StockExportBusPart extends ExportBusPart implements ISubMenuHost {
 
             maxAmount = Math.min(maxAmount, amount - currentAmount);
 
-            var transferred = getExportStrategy().transfer(context, what, maxAmount);
+            var transferred = getExportStrategy().transfer(context, what, maxAmount, Actionable.MODULATE);
             if (transferred > 0) {
                 context.reduceOperationsRemaining(Math.max(1, transferred / transferFactor));
             }

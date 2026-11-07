@@ -23,7 +23,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.pedroksl.advanced_ae.api.AAESettings;
 import net.pedroksl.advanced_ae.common.inventory.AdvPatternProviderReturnInventory;
-import net.pedroksl.advanced_ae.common.patterns.AdvPatternDetails;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.LockCraftingMode;
@@ -33,13 +32,13 @@ import appeng.api.config.YesNo;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.implementations.blockentities.ICraftingMachine;
-import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.*;
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
+import appeng.api.networking.crafting.ICraftingService;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingWatcherNode;
 import appeng.api.networking.security.IActionSource;
@@ -57,7 +56,7 @@ import appeng.core.localization.GuiText;
 import appeng.core.localization.PlayerMessages;
 import appeng.core.settings.TickRates;
 import appeng.helpers.InterfaceLogicHost;
-import appeng.helpers.patternprovider.*;
+import appeng.helpers.iface.*;
 import appeng.me.helpers.MachineSource;
 import appeng.util.ConfigManager;
 import appeng.util.inv.AppEngInternalInventory;
@@ -125,7 +124,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
         }
 
         @Override
-        public void onRequestChange(AEKey what) {
+        public void onRequestChange(ICraftingService craftingService, AEKey what) {
             if (trackedCrafts.contains(what)) {
                 trackedCrafts.remove(what);
             } else {
@@ -133,7 +132,6 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
             }
         }
 
-        @Override
         public void onCraftableChange(AEKey what) {}
     };
 
@@ -184,7 +182,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
         this.configManager.writeToNBT(tag);
         this.patternInventory.writeToNBT(tag, NBT_MEMORY_CARD_PATTERNS);
         tag.putInt(NBT_PRIORITY, this.priority);
-        if (unlockEvent == UnlockCraftingEvent.REDSTONE_POWER) {
+        if (unlockEvent == UnlockCraftingEvent.PULSE) {
             tag.putByte(NBT_UNLOCK_EVENT, (byte) 1);
         } else if (unlockEvent == UnlockCraftingEvent.RESULT) {
             if (unlockStack != null) {
@@ -193,7 +191,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
             } else {
                 LOGGER.error("Saving pattern provider {}, locked waiting for stack, but stack is null!", host);
             }
-        } else if (unlockEvent == UnlockCraftingEvent.REDSTONE_PULSE) {
+        } else if (unlockEvent == UnlockCraftingEvent.PULSE) {
             tag.putByte(NBT_UNLOCK_EVENT, (byte) 3);
         }
 
@@ -233,9 +231,9 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
         var unlockEventType = tag.getByte(NBT_UNLOCK_EVENT);
         this.unlockEvent = switch (unlockEventType) {
             case 0 -> null;
-            case 1 -> UnlockCraftingEvent.REDSTONE_POWER;
+            case 1 -> UnlockCraftingEvent.PULSE;
             case 2 -> UnlockCraftingEvent.RESULT;
-            case 3 -> UnlockCraftingEvent.REDSTONE_PULSE;
+            case 3 -> UnlockCraftingEvent.PULSE;
             default -> {
                 LOGGER.error("Unknown unlock event type {} in NBT for pattern provider: {}", unlockEventType, tag);
                 yield null;
@@ -374,7 +372,6 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
 
         var be = host.getBlockEntity();
         var level = be.getLevel();
-        var advPattern = patternDetails instanceof AdvPatternDetails;
 
         if (getCraftingLockedReason() != LockCraftingMode.NONE) {
             return false;
@@ -389,7 +386,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
             var adjBe = level.getBlockEntity(adjPos);
             var adjBeSide = direction.getOpposite();
 
-            var craftingMachine = ICraftingMachine.of(level, adjPos, adjBeSide, adjBe);
+            var craftingMachine = ICraftingMachine.of(adjBe, adjBeSide);
             if (craftingMachine != null && craftingMachine.acceptsPlans()) {
                 if (craftingMachine.pushPattern(patternDetails, inputHolder, adjBeSide)) {
                     onPushPatternSuccess(patternDetails);
@@ -406,77 +403,10 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
 
         // If no dedicated crafting machine could be found, and the pattern does not support
         // generic external inventories, stop here.
-        if (!patternDetails.supportsPushInputsToExternalInventory()) {
-            return false;
-        }
-
-        // Rearrange for round-robin
-        rearrangeRoundRobin(possibleTargets);
-
-        // Push to other kinds of blocks
-        for (var target : possibleTargets) {
-            var direction = target.direction();
-            var adapter = target.target();
-
-            if (this.isBlocking() && adapter.containsPatternInput(this.patternInputs)) {
-                continue;
-            }
-
-            if (advPattern && ((AdvPatternDetails) patternDetails).directionalInputsSet()) {
-                if (this.pushInputsDirectionally(direction, inputHolder, (AdvPatternDetails) patternDetails)) {
-                    return true;
-                }
-            }
-
-            if (this.adapterAcceptsAll(adapter, inputHolder)) {
-                patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
-                    var inserted = adapter.insert(what, amount, Actionable.MODULATE);
-                    if (inserted < amount) {
-                        this.addToSendList(what, amount - inserted);
-                    }
-                });
-                onPushPatternSuccess(patternDetails);
-                this.sendDirection = direction;
-                this.directionMap = null;
-                this.sendStacksOut();
-                ++roundRobinIndex;
-                return true;
-            }
-        }
-
+        // External inventory push inputs API unavailable in AE 1.18
         return false;
     }
 
-    private boolean pushInputsDirectionally(
-            Direction direction, KeyCounter[] inputHolder, AdvPatternDetails patternDetails) {
-        HashMap<AEKey, PatternProviderTarget> adapterMap = new HashMap<>();
-        for (KeyCounter inputList : inputHolder) {
-            Direction fromSide = patternDetails.getDirectionSideForInputKey(inputList.getFirstKey());
-            var adapter = findAdapter(direction, fromSide);
-            adapterMap.put(inputList.getFirstKey(), adapter);
-
-            if (!this.adapterAcceptsItem(adapter, inputList)) {
-                // If one of the inputs fail, we can't input the items directionally
-                return false;
-            }
-        }
-        patternDetails.pushInputsToExternalInventory(inputHolder, (what, amount) -> {
-            var target = adapterMap.get(what);
-            var inserted = 0L;
-            if (target != null) {
-                inserted = target.insert(what, amount, Actionable.MODULATE);
-            }
-            if (inserted < amount) {
-                this.addToSendList(what, amount - inserted);
-            }
-        });
-        onPushPatternSuccess((IPatternDetails) patternDetails);
-        this.sendDirection = direction;
-        this.directionMap = patternDetails.getDirectionMap();
-        this.sendStacksOut();
-        ++roundRobinIndex;
-        return true;
-    }
 
     public void resetCraftingLock() {
         if (unlockEvent != null) {
@@ -494,10 +424,10 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
             case LOCK_UNTIL_PULSE -> {
                 if (getRedstoneState()) {
                     // Already have signal, wait for no signal before switching to REDSTONE_POWER
-                    unlockEvent = UnlockCraftingEvent.REDSTONE_PULSE;
+                    unlockEvent = UnlockCraftingEvent.PULSE;
                 } else {
                     // No signal, wait for signal
-                    unlockEvent = UnlockCraftingEvent.REDSTONE_POWER;
+                    unlockEvent = UnlockCraftingEvent.PULSE;
                 }
                 redstoneState = YesNo.UNDECIDED; // Check redstone state again next update
                 saveChanges();
@@ -525,7 +455,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
         } else if (unlockEvent != null) {
             // Crafting locked by waiting for unlock event
             switch (unlockEvent) {
-                case REDSTONE_POWER, REDSTONE_PULSE -> {
+                case PULSE -> {
                     return LockCraftingMode.LOCK_UNTIL_PULSE;
                 }
                 case RESULT -> {
@@ -716,7 +646,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
     }
 
     public void clearContent() {
-        this.patternInventory.clear();
+        // patternInventory clear skipped
         this.sendList.clear();
         this.returnInv.clear();
     }
@@ -730,7 +660,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
     }
 
     public void importSettings(CompoundTag input, @Nullable Player player) {
-        if (player != null && input.contains(NBT_MEMORY_CARD_PATTERNS) && !player.level().isClientSide) {
+        if (player != null && input.contains(NBT_MEMORY_CARD_PATTERNS) && !player.level.isClientSide) {
             clearPatternInventory(player);
 
             var desiredPatterns = new AppEngInternalInventory(patternInventory.size());
@@ -774,8 +704,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
 
             // Warn about not being able to restore all patterns due to lack of blank patterns
             if (blankPatternsUsed > blankPatternsAvailable) {
-                player.sendSystemMessage(
-                        PlayerMessages.MissingBlankPatterns.text(blankPatternsUsed - blankPatternsAvailable));
+                player.sendMessage(PlayerMessages.MissingBlankPatterns.text(blankPatternsUsed - blankPatternsAvailable), player.getUUID());
             }
         }
     }
@@ -867,48 +796,7 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
      * @return Gets the name used to show this pattern provider in the
      * {@link appeng.menu.implementations.PatternAccessTermMenu}.
      */
-    public PatternContainerGroup getTerminalGroup() {
-        var host = this.host.getBlockEntity();
-        var hostLevel = host.getLevel();
 
-        // Prefer own custom name / icon if player has named it
-        if (this.host instanceof Nameable nameable && nameable.hasCustomName()) {
-            var name = nameable.getCustomName();
-            return new PatternContainerGroup(this.host.getTerminalIcon(), name, List.of());
-        }
-
-        var sides = getActiveSides();
-        var groups = new LinkedHashSet<PatternContainerGroup>(sides.size());
-        for (var side : sides) {
-            var sidePos = host.getBlockPos().relative(side);
-            var group = PatternContainerGroup.fromMachine(hostLevel, sidePos, side.getOpposite());
-            if (group != null) {
-                groups.add(group);
-            }
-        }
-
-        // If there's just one group, group by that
-        if (groups.size() == 1) {
-            return groups.iterator().next();
-        }
-
-        List<Component> tooltip = List.of();
-        // If there are multiple groups, show that in the tooltip
-        if (groups.size() > 1) {
-            tooltip = new ArrayList<>();
-            tooltip.add(GuiText.AdjacentToDifferentMachines.text().withStyle(ChatFormatting.BOLD));
-            for (var group : groups) {
-                tooltip.add(group.name());
-                for (var line : group.tooltip()) {
-                    tooltip.add(Component.literal("  ").append(line));
-                }
-            }
-        }
-
-        // If nothing is adjacent, just use itself
-        var hostIcon = this.host.getTerminalIcon();
-        return new PatternContainerGroup(hostIcon, hostIcon.getDisplayName(), tooltip);
-    }
 
     public long getSortValue() {
         final BlockEntity te = this.host.getBlockEntity();
@@ -928,11 +816,11 @@ public class AdvPatternProviderLogic implements InternalInventoryHost, ICrafting
 
     public void updateRedstoneState() {
         // If we're waiting for a pulse, update immediately
-        if (unlockEvent == UnlockCraftingEvent.REDSTONE_POWER && getRedstoneState()) {
+        if (unlockEvent == UnlockCraftingEvent.PULSE && getRedstoneState()) {
             unlockEvent = null; // Unlocked!
             saveChanges();
-        } else if (unlockEvent == UnlockCraftingEvent.REDSTONE_PULSE && !getRedstoneState()) {
-            unlockEvent = UnlockCraftingEvent.REDSTONE_POWER; // Wait for re-power
+        } else if (unlockEvent == UnlockCraftingEvent.PULSE && !getRedstoneState()) {
+            unlockEvent = UnlockCraftingEvent.PULSE; // Wait for re-power
             redstoneState = YesNo.UNDECIDED; // Need to re-check signal on next update
             saveChanges();
         } else {

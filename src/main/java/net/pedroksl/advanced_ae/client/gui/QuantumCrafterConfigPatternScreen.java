@@ -1,5 +1,9 @@
 package net.pedroksl.advanced_ae.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.GuiComponent;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -7,9 +11,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.datafixers.util.Pair;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.pedroksl.advanced_ae.client.gui.widgets.AAEIcon;
@@ -25,8 +29,6 @@ import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.implementations.AESubScreen;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.Scrollbar;
-import appeng.client.guidebook.document.LytRect;
-import appeng.client.guidebook.render.SimpleRenderContext;
 import appeng.core.AppEng;
 import appeng.menu.slot.FakeSlot;
 
@@ -62,7 +64,8 @@ public class QuantumCrafterConfigPatternScreen extends AEBaseScreen<QuantumCraft
     }
 
     @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+        PoseStack poseStack = guiGraphics;
         this.menu.slots.removeIf(slot -> slot instanceof FakeSlot);
         this.rows.forEach(row -> {
             if (row != null) {
@@ -96,54 +99,55 @@ public class QuantumCrafterConfigPatternScreen extends AEBaseScreen<QuantumCraft
             var x = LIST_ANCHOR_X + 1;
             var y = LIST_ANCHOR_Y + 1 + i * (ROW_HEIGHT + ROW_SPACING);
             InputRow row = this.rows.get(currentRow);
-            var renderContext = new SimpleRenderContext(LytRect.empty(), guiGraphics);
-            renderContext.renderItem(row.key().wrapForDisplayOrFilter(), x, y, 16, 16);
+            this.minecraft.getItemRenderer().renderGuiItem(row.key().wrapForDisplayOrFilter(), x, y);
 
             x += 37;
             y += 4;
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, row.label, x, y, 0xFFFFFF);
+            Minecraft.getInstance().font.draw(guiGraphics, row.label.getString(), x, y, 0xFFFFFF);
 
             x += offsetX + 20;
             y += offsetY;
             row.textField.setWidth(TEXTFIELD_WIDTH);
             row.textField.setHeight(TEXTFIELD_HEIGHT);
             row.textField.setX(x);
-            row.textField.setY(y);
+            row.textField.y=y;
             row.textField.setVisible(true);
 
             x += TEXTFIELD_WIDTH + 10;
             y -= 5;
             row.button.setValid(!row.textField.isChanged());
-            row.button.setPosition(x, y);
+            row.button.x=x;
+            row.button.y=y;
         }
 
         if (outputRow != null) {
             var x = OUTPUT_X + 1;
             var y = OUTPUT_Y + 1;
-            var renderContext = new SimpleRenderContext(LytRect.empty(), guiGraphics);
-            renderContext.renderItem(outputRow.key().wrapForDisplayOrFilter(), x, y, 16, 16);
+            this.minecraft.getItemRenderer().renderGuiItem(outputRow.key().wrapForDisplayOrFilter(), x, y);
 
             x += 37;
             y += 4;
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, outputRow.label, x, y, 0xFFFFFF);
+            Minecraft.getInstance().font.draw(guiGraphics, outputRow.label.getString(), x, y, 0xFFFFFF);
 
             x += offsetX + 20;
             y += offsetY;
             outputRow.textField.setWidth(TEXTFIELD_WIDTH);
             outputRow.textField.setHeight(TEXTFIELD_HEIGHT);
             outputRow.textField.setX(x);
-            outputRow.textField.setY(y);
+            outputRow.textField.y=y;
             outputRow.textField.setVisible(true);
 
             x += TEXTFIELD_WIDTH + 10;
             y -= 5;
             outputRow.button.setValid(!outputRow.textField.isChanged());
-            outputRow.button.setPosition(x, y);
+            outputRow.button.x=x;
+            outputRow.button.y=y;
         }
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        PoseStack poseStack = guiGraphics;
         super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         int currentX = offsetX + LIST_ANCHOR_X;
@@ -151,25 +155,15 @@ public class QuantumCrafterConfigPatternScreen extends AEBaseScreen<QuantumCraft
 
         int visibleRows = Math.min(VISIBLE_ROWS, this.rows.size());
         for (int i = 0; i < visibleRows; ++i) {
-            guiGraphics.blit(
-                    DEFAULT_TEXTURE,
-                    currentX,
-                    currentY,
-                    SLOT_BBOX.getX(),
-                    SLOT_BBOX.getY(),
-                    SLOT_BBOX.getWidth(),
-                    SLOT_BBOX.getHeight());
+            RenderSystem.setShaderTexture(0, DEFAULT_TEXTURE);
+            GuiComponent.blit(guiGraphics, currentX, currentY,
+                    SLOT_BBOX.getX(), SLOT_BBOX.getY(), SLOT_BBOX.getWidth(), SLOT_BBOX.getHeight(), 16, 16);
             currentY += ROW_HEIGHT + ROW_SPACING;
         }
 
-        guiGraphics.blit(
-                DEFAULT_TEXTURE,
-                offsetX + OUTPUT_X,
-                offsetY + OUTPUT_Y,
-                SLOT_BBOX.getX(),
-                SLOT_BBOX.getY(),
-                SLOT_BBOX.getWidth(),
-                SLOT_BBOX.getHeight());
+        RenderSystem.setShaderTexture(0, DEFAULT_TEXTURE);
+        GuiComponent.blit(guiGraphics, offsetX + OUTPUT_X, offsetY + OUTPUT_Y,
+                SLOT_BBOX.getX(), SLOT_BBOX.getY(), SLOT_BBOX.getWidth(), SLOT_BBOX.getHeight(), 16, 16);
     }
 
     public void update(LinkedHashMap<AEKey, Long> inputs, Pair<AEKey, Long> output) {
@@ -180,20 +174,20 @@ public class QuantumCrafterConfigPatternScreen extends AEBaseScreen<QuantumCraft
             for (var entry : inputs.entrySet()) {
                 var textField = addNewNumberField(entry.getValue(), this.rows.size());
                 this.rows.add(new InputRow(
-                        entry.getKey(), textField, Component.empty().append("Keep:"), new ValidButton(btn -> {})));
+                        entry.getKey(), textField, new TextComponent("").append("Keep:"), new ValidButton(btn -> {})));
             }
         } else {
             for (var row : this.rows) {
-                row.textField.setFocused(false);
+                // focused skipped
             }
         }
 
         if (this.outputRow == null) {
             var textField = addNewNumberField(output.getSecond(), -1);
             this.outputRow = new InputRow(
-                    output.getFirst(), textField, Component.empty().append("Limit:"), new ValidButton(btn -> {}));
+                    output.getFirst(), textField, new TextComponent("").append("Limit:"), new ValidButton(btn -> {}));
         } else {
-            this.outputRow.textField.setFocused(false);
+            // focused skipped
         }
 
         resetScrollbar();

@@ -4,7 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 import appeng.api.stacks.AEKey;
 import appeng.api.storage.MEStorage;
@@ -15,7 +16,6 @@ import appeng.util.BlockApiCache;
 public class StorageReaderImpl<T, S> implements StorageReader {
 
     private final BlockApiCache<T> cache;
-    private final BlockApiCache<MEStorage> meCache;
     private final HandlerStrategy<T, S> conversion;
     private final Direction fromSide;
 
@@ -26,7 +26,6 @@ public class StorageReaderImpl<T, S> implements StorageReader {
             BlockPos fromPos,
             Direction fromSide) {
         this.cache = BlockApiCache.create(capability, level, fromPos);
-        this.meCache = BlockApiCache.create(Capabilities.STORAGE, level, fromPos);
         this.conversion = conversion;
         this.fromSide = fromSide;
     }
@@ -37,14 +36,6 @@ public class StorageReaderImpl<T, S> implements StorageReader {
         }
 
         // Try internal capability first
-        var meHandler = meCache.find(fromSide);
-        if (meHandler != null) {
-            var keys = meHandler.getAvailableStacks();
-            if (keys.get(what) > 0) {
-                return keys.get(what);
-            }
-        }
-
         var adjacentHandler = cache.find(fromSide);
         if (adjacentHandler == null) {
             return 0;
@@ -56,11 +47,11 @@ public class StorageReaderImpl<T, S> implements StorageReader {
     }
 
     public static StorageReader item(ServerLevel level, BlockPos fromPos, Direction fromSide) {
-        return new StorageReaderImpl<>(ForgeCapabilities.ITEM_HANDLER, HandlerStrategy.ITEMS, level, fromPos, fromSide);
+        return new StorageReaderImpl<>(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, HandlerStrategy.ITEMS, level, fromPos, fromSide);
     }
 
     public static StorageReader fluid(ServerLevel level, BlockPos fromPos, Direction fromSide) {
         return new StorageReaderImpl<>(
-                ForgeCapabilities.FLUID_HANDLER, HandlerStrategy.FLUIDS, level, fromPos, fromSide);
+                CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, HandlerStrategy.FLUIDS, level, fromPos, fromSide);
     }
 }

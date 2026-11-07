@@ -14,19 +14,16 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
+import java.util.Random;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.client.model.IDynamicBakedModel;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.IDynamicBakedModel;
+import net.minecraftforge.client.model.data.IModelData;
 
 import appeng.blockentity.crafting.CraftingCubeModelData;
 import appeng.client.render.cablebus.CubeBuilder;
 import appeng.util.Platform;
 
 abstract class AAECraftingCubeBakedModel implements IDynamicBakedModel {
-    private static final ChunkRenderTypeSet RENDER_TYPES = ChunkRenderTypeSet.of(RenderType.cutout());
-
     private final TextureAtlasSprite ringCorner;
 
     private final TextureAtlasSprite ringHor;
@@ -43,9 +40,8 @@ abstract class AAECraftingCubeBakedModel implements IDynamicBakedModel {
     public @NotNull List<BakedQuad> getQuads(
             @Nullable BlockState state,
             @Nullable Direction side,
-            @NotNull RandomSource rand,
-            @NotNull ModelData extraData,
-            RenderType renderType) {
+            @NotNull Random rand,
+            @NotNull IModelData extraData) {
         if (side == null) {
             return Collections.emptyList(); // No generic quads for this model
         }
@@ -213,9 +209,9 @@ abstract class AAECraftingCubeBakedModel implements IDynamicBakedModel {
 
     // Retrieve the cube connection state from the block state
     // If none is present, just assume there are no adjacent crafting cube blocks
-    private static EnumSet<Direction> getConnections(ModelData modelData) {
-        if (modelData.has(CraftingCubeModelData.CONNECTIONS)) {
-            return modelData.get(CraftingCubeModelData.CONNECTIONS);
+    private static EnumSet<Direction> getConnections(net.minecraftforge.client.model.data.IModelData modelData) {
+        if (modelData.hasProperty(CraftingCubeModelData.CONNECTIONS)) {
+            return modelData.getData(CraftingCubeModelData.CONNECTIONS);
         }
         return EnumSet.noneOf(Direction.class);
     }
@@ -223,7 +219,7 @@ abstract class AAECraftingCubeBakedModel implements IDynamicBakedModel {
     protected abstract void addInnerCube(
             Direction facing,
             BlockState state,
-            ModelData modelData,
+            net.minecraftforge.client.model.data.IModelData modelData,
             CubeBuilder builder,
             float x1,
             float y1,
@@ -263,8 +259,7 @@ abstract class AAECraftingCubeBakedModel implements IDynamicBakedModel {
     }
 
     @ParametersAreNonnullByDefault
-    @Override
-    public @NotNull ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        return RENDER_TYPES;
+    public List<RenderType> getRenderTypes(BlockState state, Random rand, IModelData data) {
+        return List.of(RenderType.cutout());
     }
 }

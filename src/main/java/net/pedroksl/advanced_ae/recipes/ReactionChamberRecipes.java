@@ -17,7 +17,13 @@ public final class ReactionChamberRecipes {
     private ReactionChamberRecipes() {}
 
     public static Iterable<ReactionChamberRecipe> getRecipes(Level level) {
-        return level.getRecipeManager().byType(ReactionChamberRecipe.TYPE).values();
+        List<ReactionChamberRecipe> out = new ArrayList<>();
+        for (var recipe : level.getRecipeManager().getRecipes()) {
+            if (recipe.getType() == ReactionChamberRecipe.TYPE) {
+                out.add((ReactionChamberRecipe) recipe);
+            }
+        }
+        return out;
     }
 
     @Nullable

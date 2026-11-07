@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -106,7 +107,7 @@ public class QuantumArmorStyleConfigScreen extends AEBaseScreen<QuantumArmorStyl
 
         // Handle item selection
         if (btn == InputConstants.MOUSE_BUTTON_LEFT) {
-            Slot slot = this.findSlot(xCoord, yCoord);
+            Slot slot = this.hoveredSlot;
             if (isValidSlot(slot)) {
                 if (this.applyToAll) return true;
                 this.selectedIndex = slot.index;
@@ -126,18 +127,18 @@ public class QuantumArmorStyleConfigScreen extends AEBaseScreen<QuantumArmorStyl
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
+    public void drawBG(PoseStack poseStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        super.drawBG(poseStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         if (this.applyToAll) {
             for (var slot : this.menu.getSlots(AAESlotSemantics.ARMOR)) {
                 AEBaseScreen.renderSlotHighlight(
-                        guiGraphics, slot.x + offsetX, slot.y + offsetY, 0, AAEColor.LIGHT_PURPLE.argb());
+                        poseStack, slot.x + offsetX, slot.y + offsetY, 0, AAEColor.LIGHT_PURPLE.argb());
             }
         } else if (selectedIndex != -1 && selectedIndex < this.menu.slots.size()) {
             var slot = this.menu.getSlot(selectedIndex);
             AEBaseScreen.renderSlotHighlight(
-                    guiGraphics, slot.x + offsetX, slot.y + offsetY, 0, AAEColor.LIGHT_PURPLE.argb());
+                    poseStack, slot.x + offsetX, slot.y + offsetY, 0, AAEColor.LIGHT_PURPLE.argb());
         }
     }
 

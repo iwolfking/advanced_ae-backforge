@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.pedroksl.advanced_ae.common.items.armors.IGridLinkedItem;
-import net.pedroksl.advanced_ae.common.items.armors.QuantumArmorBase;
 
 import appeng.api.implementations.blockentities.IWirelessAccessPoint;
 import appeng.api.implementations.menuobjects.ItemMenuHost;
@@ -13,11 +12,11 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.storage.ISubMenuHost;
-import appeng.blockentity.networking.WirelessAccessPointBlockEntity;
+import appeng.api.implementations.blockentities.IWirelessAccessPoint;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.ISubMenu;
 
-public class PickCraftMenuHost<T extends QuantumArmorBase> extends ItemMenuHost implements ISubMenuHost, IActionHost {
+public class PickCraftMenuHost<T> extends ItemMenuHost implements ISubMenuHost, IActionHost {
 
     @Nullable
     private IWirelessAccessPoint currentAccessPoint;
@@ -30,7 +29,7 @@ public class PickCraftMenuHost<T extends QuantumArmorBase> extends ItemMenuHost 
 
     private IGrid getLinkedGrid(ItemStack stack) {
         if (stack.getItem() instanceof IGridLinkedItem item) {
-            return item.getLinkedGrid(stack, getPlayer().level());
+            return item.getLinkedGrid(stack, getPlayer().level);
         }
         return null;
     }
@@ -45,7 +44,7 @@ public class PickCraftMenuHost<T extends QuantumArmorBase> extends ItemMenuHost 
 
         var targetGrid = getLinkedGrid(getItemStack());
         if (targetGrid != null) {
-            for (var wap : targetGrid.getMachines(WirelessAccessPointBlockEntity.class)) {
+            for (var wap : targetGrid.getMachines(IWirelessAccessPoint.class)) {
                 if (wap.isActive()) {
                     this.currentAccessPoint = wap;
                     break;

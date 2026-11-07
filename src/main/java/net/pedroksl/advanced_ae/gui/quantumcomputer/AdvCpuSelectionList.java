@@ -7,7 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -165,17 +166,16 @@ public class AdvCpuSelectionList implements ICompositeWidget {
         scrollbar.setRange(0, hiddenRows, ROWS / 3);
     }
 
-    @Override
-    public void drawBackgroundLayer(GuiGraphics guiGraphics, Rect2i bounds, Point mouse) {
+    public void drawBackgroundLayer(PoseStack guiGraphics, Rect2i bounds, Point mouse) {
         var x = bounds.getX() + this.bounds.getX();
         var y = bounds.getY() + this.bounds.getY();
-        background.dest(x, y, this.bounds.getWidth(), this.bounds.getHeight()).blit(guiGraphics);
+        background.dest(x, y, this.bounds.getWidth(), this.bounds.getHeight()).blit(guiGraphics, 1);
 
         // Move to first button
         x += 9;
         y += 19;
 
-        var pose = guiGraphics.pose();
+        var pose = guiGraphics;
 
         var font = Minecraft.getInstance().font;
         var cpus = menu.cpuList
@@ -194,13 +194,13 @@ public class AdvCpuSelectionList implements ICompositeWidget {
             if (cpu.serial() == menu.getSelectedCpuSerial()) {
                 color = selectedColor;
             }
-            buttonBg.dest(x, y).colorRgb(color).blit(guiGraphics);
+            buttonBg.dest(x, y).colorRgb(color).blit(guiGraphics, 1);
 
             var name = getCpuName(cpu);
             pose.pushPose();
             pose.translate(x + 3, y + 3, 0);
             pose.scale(0.8f, 0.8f, 1);
-            guiGraphics.drawString(font, name, 0, 0, textColor.toARGB(), false);
+            font.draw(guiGraphics, name, 0, 0, textColor.toARGB());
             pose.popPose();
 
             var infoBar = new InfoBar();
@@ -208,16 +208,17 @@ public class AdvCpuSelectionList implements ICompositeWidget {
             var currentJob = cpu.currentJob();
             if (currentJob != null) {
                 // Show what was initially requested
-                infoBar.add(Icon.CRAFT_HAMMER, 0.6f);
+                infoBar.add(Icon.LEVEL_ITEM, 0.6f);
                 infoBar.addSpace(2);
-                var craftAmt = currentJob.what().formatAmount(currentJob.amount(), AmountFormat.SLOT);
+                var craftAmt = currentJob.what().formatAmount(currentJob.amount(), AmountFormat.FULL);
                 infoBar.add(craftAmt, textColor.toARGB(), 0.6f);
                 infoBar.addSpace(1);
                 infoBar.add(currentJob.what(), 0.6f);
 
                 // Draw a bar at the bottom of the button to indicate job progress
                 var progress = (int) (cpu.progress() * (buttonBg.getSrcWidth() - 1));
-                guiGraphics.fill(
+                GuiComponent.fill(
+                        guiGraphics,
                         x + 1,
                         y + buttonBg.getSrcHeight() - 2,
                         x + progress,

@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.pedroksl.advanced_ae.api.AAESettings;
@@ -75,18 +75,15 @@ public class QuantumCrafterScreen extends UpgradeableScreen<QuantumCrafterMenu> 
             configButtons.add(cfgButton);
 
             var enableButton = widgets.addCheckbox(
-                    "enableButton" + (1 + i), Component.empty(), () -> menu.toggleEnablePattern(index));
+                    "enableButton" + (1 + i), new TextComponent(""), () -> menu.toggleEnablePattern(index));
             enableButton.setRadio(true);
-            enableButton.setTooltip(Tooltip.create(AAEText.EnablePatternButton.text()));
+            /* no tooltip */
             enableButtons.add(enableButton);
         }
 
         this.invalidPatternAlert = new InvalidPatternAlert(style.getImage("invalidPatternAlert"));
-        this.invalidPatternAlert.setTooltip(Tooltip.create(Tooltips.of(
-                AAEText.InvalidPattern.text().withStyle(Tooltips.RED),
-                Component.literal("\n")
-                        .append(AAEText.InvalidPatternDetails.text())
-                        .withStyle(Tooltips.NORMAL_TOOLTIP_TEXT))));
+        // this.invalidPatternAlert.setTooltip(...);
+
         this.widgets.add("invalidPatternAlert", this.invalidPatternAlert);
     }
 
@@ -103,7 +100,7 @@ public class QuantumCrafterScreen extends UpgradeableScreen<QuantumCrafterMenu> 
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(PoseStack guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         for (var x = 0; x < this.invalidPatternSlots.size(); x++) {
@@ -138,9 +135,8 @@ public class QuantumCrafterScreen extends UpgradeableScreen<QuantumCrafterMenu> 
             setMessage(AAEText.ConfigurePatternButton.text());
         }
 
-        @Override
         protected Icon getIcon() {
-            return isHoveredOrFocused() ? Icon.WRENCH : Icon.WRENCH_DISABLED;
+            return isHoveredOrFocused() ? Icon.WRENCH : Icon.WRENCH;
         }
     }
 
@@ -149,16 +145,16 @@ public class QuantumCrafterScreen extends UpgradeableScreen<QuantumCrafterMenu> 
         private final Blitter invalidPatternAlert;
 
         public InvalidPatternAlert(Blitter alert) {
-            super(0, 0, 18, 18, Component.empty());
+            super(0, 0, 18, 18, new TextComponent(""));
             this.invalidPatternAlert = alert;
         }
 
-        @Override
-        protected void renderWidget(GuiGraphics guiGraphics, int i, int i1, float v) {
-            this.invalidPatternAlert.dest(this.getX(), this.getY()).blit(guiGraphics);
+        protected void renderWidget(PoseStack guiGraphics, int i, int i1, float v) {
+            this.invalidPatternAlert.dest(this.x, this.y).blit(guiGraphics, 0);
         }
 
         @Override
+        public void updateNarration(NarrationElementOutput narrationElementOutput) {}
         protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {}
     }
 }

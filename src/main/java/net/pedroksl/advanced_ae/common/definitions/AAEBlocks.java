@@ -1,7 +1,6 @@
 package net.pedroksl.advanced_ae.common.definitions;
 
-import static appeng.block.AEBaseBlock.metalProps;
-import static appeng.block.AEBaseBlock.stoneProps;
+import net.minecraft.world.level.material.Material;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -34,17 +33,17 @@ public final class AAEBlocks extends BlockRegistry {
     public static final LibBlockDefinition<AEDecorativeBlock> QUANTUM_ALLOY_BLOCK = block(
             "Quantum Alloy Block",
             "quantum_alloy_block",
-            () -> new AEDecorativeBlock(stoneProps().strength(25, 150).requiresCorrectToolForDrops()),
+            () -> new AEDecorativeBlock(appeng.block.AEBaseBlock.defaultProps(Material.STONE).strength(25, 150).requiresCorrectToolForDrops()),
             BlockItem::new);
     public static final LibBlockDefinition<StairBlock> QUANTUM_ALLOY_STAIRS = block(
             "Quantum Alloy Stairs",
             "quantum_alloy_stairs",
-            () -> new StairBlock(QUANTUM_ALLOY_BLOCK.block().defaultBlockState(), metalProps()),
+            () -> new StairBlock(QUANTUM_ALLOY_BLOCK.block().defaultBlockState(), appeng.block.AEBaseBlock.defaultProps(Material.METAL)),
             BlockItem::new);
     public static final LibBlockDefinition<WallBlock> QUANTUM_ALLOY_WALL =
-            block("Quantum Alloy Wall", "quantum_alloy_wall", () -> new WallBlock(metalProps()), BlockItem::new);
+            block("Quantum Alloy Wall", "quantum_alloy_wall", () -> new WallBlock(appeng.block.AEBaseBlock.defaultProps(Material.METAL)), BlockItem::new);
     public static final LibBlockDefinition<SlabBlock> QUANTUM_ALLOY_SLAB =
-            block("Quantum Alloy Slab", "quantum_alloy_slab", () -> new SlabBlock(metalProps()), BlockItem::new);
+            block("Quantum Alloy Slab", "quantum_alloy_slab", () -> new SlabBlock(appeng.block.AEBaseBlock.defaultProps(Material.METAL)), BlockItem::new);
 
     public static final LibBlockDefinition<AAECraftingUnitBlock> QUANTUM_UNIT = block(
             "Quantum Crafting Unit",

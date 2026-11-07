@@ -8,10 +8,12 @@ import org.jetbrains.annotations.NotNull;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.pedroksl.advanced_ae.common.definitions.AAENbt;
 import net.pedroksl.advanced_ae.common.definitions.AAEText;
 import net.pedroksl.advanced_ae.common.items.upgrades.UpgradeType;
@@ -52,7 +54,7 @@ public interface IUpgradeableItem extends IGridLinkedItem {
     }
 
     default boolean isUpgradePowered(@NotNull ItemStack stack, UpgradeType upgrade) {
-        var energyOp = stack.getCapability(ForgeCapabilities.ENERGY);
+        var energyOp = stack.getCapability(CapabilityEnergy.ENERGY);
         return energyOp.isPresent() && energyOp.resolve().get().getEnergyStored() >= upgrade.getCost();
     }
 
@@ -106,12 +108,12 @@ public interface IUpgradeableItem extends IGridLinkedItem {
                 stack.addTagElement(AAENbt.UPGRADE_TAG.get(type), tag);
 
                 if (player != null) {
-                    var id = Component.translatable(type.item().asItem().getDescriptionId());
+                    var id = new TranslatableComponent(type.item().get().getDescriptionId());
                     var msg = id.withStyle(Tooltips.NORMAL_TOOLTIP_TEXT);
                     if (tag.getBoolean(AAENbt.UPGRADE_TOGGLE)) {
-                        msg.append(Component.literal(" ON").withStyle(Tooltips.GREEN));
+                        msg.append(new TextComponent(" ON").withStyle(Tooltips.GREEN));
                     } else {
-                        msg.append(Component.literal(" OFF").withStyle(Tooltips.RED));
+                        msg.append(new TextComponent(" OFF").withStyle(Tooltips.RED));
                     }
                     player.displayClientMessage(msg, true);
                 }
@@ -119,7 +121,7 @@ public interface IUpgradeableItem extends IGridLinkedItem {
             }
         }
         if (player != null) {
-            var id = Component.translatable(type.item().asItem().getDescriptionId());
+            var id = new TranslatableComponent(type.item().get().getDescriptionId());
             player.displayClientMessage(AAEText.UpgradeNotInstalledMessage.text(id), true);
         }
         return false;
@@ -233,7 +235,7 @@ public interface IUpgradeableItem extends IGridLinkedItem {
             var multi = PowerMultiplier.CONFIG;
             item.extractAEPower(stack, multi.multiply(amount), Actionable.MODULATE);
         } else {
-            var energyOp = stack.getCapability(ForgeCapabilities.ENERGY);
+            var energyOp = stack.getCapability(CapabilityEnergy.ENERGY);
             energyOp.ifPresent(e -> e.extractEnergy(amount, false));
         }
     }

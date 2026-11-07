@@ -79,7 +79,6 @@ public class PortableWorkbenchMenu extends UpgradeableMenu<PortableCellWorkbench
         return getHost().getConfigManager().getSetting(Settings.COPY_MODE);
     }
 
-    @Override
     protected void setupInventorySlots() {
         var cell = this.getHost().getSubInventory(ISegmentedInventory.CELLS);
         this.addSlot(

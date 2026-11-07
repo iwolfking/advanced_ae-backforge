@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.common.items.upgrades;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,13 +17,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.pedroksl.advanced_ae.common.definitions.AAEConfig;
 import net.pedroksl.advanced_ae.common.helpers.MagnetHelpers;
 import net.pedroksl.advanced_ae.common.items.armors.*;
-import net.pedroksl.advanced_ae.xmod.Addons;
-import net.pedroksl.advanced_ae.xmod.appflux.AppliedFluxPlugin;
-import net.pedroksl.advanced_ae.xmod.curios.CuriosPlugin;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
@@ -94,12 +92,12 @@ public class UpgradeCards {
                 slowDown = false;
             }
 
-            if (slowDown && player.onGround()) {
+            if (slowDown && player.isOnGround()) {
                 var motion = player.getDeltaMovement();
                 player.setDeltaMovement(motion.multiply(value, 1, value));
                 return true;
             } else if (!slowDown && value > 0) {
-                if (!player.onGround()) value /= 4f;
+                if (!player.isOnGround()) value /= 4f;
                 if (player.zza < 0F) value /= 2f;
                 player.moveRelative(
                         value, new Vec3(Math.signum(player.xxa), Math.signum(player.yya), Math.signum(player.zza)));
@@ -113,7 +111,7 @@ public class UpgradeCards {
         if (chest.getItem() instanceof QuantumArmorBase armor) {
             var value = armor.getUpgradeValue(chest, UpgradeType.FLIGHT, 0) / 25f;
             if (value > 0) {
-                if (!player.onGround()) value /= 4f;
+                if (!player.isOnGround()) value /= 4f;
                 if (player.zza < 0F) value /= 2f;
                 player.moveRelative(
                         value, new Vec3(Math.signum(player.xxa), Math.signum(player.yya), Math.signum(player.zza)));
@@ -343,8 +341,6 @@ public class UpgradeCards {
                 var neededPower = Math.min(rate, maxPower - currentPower);
 
                 if (neededPower > 0 && Addons.APPFLUX.isLoaded()) {
-                    neededPower = Math.min(afRate, maxPower - currentPower);
-                    neededPower = AppliedFluxPlugin.rechargeAeStorageItem(grid, neededPower, player, stack, armor);
                 }
 
                 if (neededPower > 0 && energy.getStoredPower() > 0) {
@@ -366,17 +362,7 @@ public class UpgradeCards {
                         rechargeItem(player, player.getOffhandItem(), grid, rate, energy);
                     }
 
-                    if (Addons.CURIOS.isLoaded()) {
-                        var optionalInv = CuriosPlugin.getCuriosInventory(player);
-                        optionalInv.ifPresent(inv -> {
-                            var handler = inv.getEquippedCurios();
-                            for (var i = 0; i < handler.getSlots(); i++) {
-                                var item = handler.getStackInSlot(i);
-                                if (item.isEmpty()) continue;
-                                rechargeItem(player, item, grid, rate, energy);
-                            }
-                        });
-                    }
+
                 }
             }
         }
@@ -386,13 +372,11 @@ public class UpgradeCards {
 
     private static void rechargeItem(
             Player player, ItemStack stack, IGrid grid, double rate, IEnergyService energyService) {
-        var capOf = stack.getCapability(ForgeCapabilities.ENERGY);
+        var capOf = stack.getCapability(CapabilityEnergy.ENERGY);
         var afRate = Integer.MAX_VALUE;
         capOf.ifPresent(cap -> {
             if (cap.canReceive() && cap.getEnergyStored() < cap.getMaxEnergyStored()) {
-                if (Addons.APPFLUX.isLoaded()) {
-                    AppliedFluxPlugin.rechargeEnergyStorage(grid, afRate, IActionSource.ofPlayer(player), cap);
-                }
+
 
                 if (energyService.getStoredPower() > 0) {
                     var extracted = energyService.extractAEPower(rate, Actionable.MODULATE, PowerMultiplier.CONFIG);

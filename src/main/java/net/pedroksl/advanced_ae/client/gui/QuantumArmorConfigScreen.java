@@ -6,13 +6,15 @@ import java.util.Map;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -81,7 +83,7 @@ public class QuantumArmorConfigScreen extends AEBaseScreen<QuantumArmorConfigMen
 
         // Handle item selection
         if (btn == InputConstants.MOUSE_BUTTON_LEFT) {
-            Slot slot = this.findSlot(xCoord, yCoord);
+            Slot slot = this.hoveredSlot;
             if (this.isArmorSlot(slot)) {
                 this.selectedIndex = slot.index;
                 this.menu.setSelectedItemSlot(slot.getSlotIndex());
@@ -122,8 +124,8 @@ public class QuantumArmorConfigScreen extends AEBaseScreen<QuantumArmorConfigMen
     }
 
     @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
-        super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
+    public void drawFG(PoseStack poseStack, int offsetX, int offsetY, int mouseX, int mouseY) {
+        super.drawFG(poseStack, offsetX, offsetY, mouseX, mouseY);
 
         Color color = this.style.getColor(PaletteColor.DEFAULT_TEXT_COLOR);
 
@@ -141,51 +143,54 @@ public class QuantumArmorConfigScreen extends AEBaseScreen<QuantumArmorConfigMen
             upgrade.setY(y, this.topPos);
             upgrade.show();
 
-            PoseStack poseStack = guiGraphics.pose();
             poseStack.pushPose();
             poseStack.translate(10.0F, 8.0F + (i * 3.5F), 0.0F);
             poseStack.scale(0.8F, 0.8F, 1.0F);
-            guiGraphics.drawString(
-                    this.font,
+            this.font.draw(
+                    poseStack,
                     upgrade.getType().getTranslatedName(),
-                    upgrade.getX() + 2,
-                    upgrade.getY() + 3,
-                    color.toARGB(),
-                    false);
+                    (float) (upgrade.getX() + 2),
+                    (float) (upgrade.getY() + 3),
+                    color.toARGB());
             poseStack.popPose();
         }
     }
 
     @Override
-    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
+    public void drawBG(PoseStack poseStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        super.drawBG(poseStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
 
         int currentX = offsetX + LIST_ANCHOR_X;
         int currentY = offsetY + LIST_ANCHOR_Y - 1;
 
         int visibleRows = Math.min(VISIBLE_ROWS, this.upgradeList.size());
         for (int i = 0; i < visibleRows; ++i) {
-            guiGraphics.blit(
-                    DEFAULT_TEXTURE,
+            RenderSystem.setShaderTexture(0, DEFAULT_TEXTURE);
+            GuiComponent.blit(
+                    poseStack,
                     currentX,
                     currentY,
                     LIST_BACK_BBOX.getX(),
                     LIST_BACK_BBOX.getY(),
                     LIST_BACK_BBOX.getWidth(),
-                    LIST_BACK_BBOX.getHeight());
+                    LIST_BACK_BBOX.getHeight(),
+                    256,
+                    256);
             currentY += LIST_LINE_HEIGHT;
         }
 
         if (selectedIndex != -1 && selectedIndex < this.menu.slots.size()) {
             var slot = this.menu.getSlot(selectedIndex);
-            AEBaseScreen.renderSlotHighlight(guiGraphics, slot.x + offsetX, slot.y + offsetY, 0, 0x787d53c1);
+            AEBaseScreen.renderSlotHighlight(poseStack, slot.x + offsetX, slot.y + offsetY, 0, 0x787d53c1);
         }
     }
 
     public void refreshList(int selectedIndex, ItemStack stack) {
         this.selectedIndex = selectedIndex;
 
-        getPlayer().setItemSlot(((QuantumArmorBase) stack.getItem()).getEquipmentSlot(), stack);
+        if (!stack.isEmpty() && stack.getItem() instanceof QuantumArmorBase armorBase) {
+            getPlayer().setItemSlot(armorBase.getEquipmentSlot(stack), stack);
+        }
 
         this.refreshList(stack, false);
     }
@@ -251,14 +256,14 @@ public class QuantumArmorConfigScreen extends AEBaseScreen<QuantumArmorConfigMen
         super.updateBeforeRender();
 
         int progress = this.menu.getCurrentProgress() * 100 / this.menu.getMaxProgress();
-        if (progress >= 0) this.pb.setFullMsg(Component.literal(progress + "%"));
-        else this.pb.setFullMsg(Component.literal(""));
+        if (progress >= 0) this.pb.setFullMsg(new TextComponent(progress + "%"));
+        else this.pb.setFullMsg(new TextComponent(""));
     }
 
     public void addChildWidget(String id, AbstractWidget widget, Map<String, AbstractWidget> child) {
-        if (widget.isFocused()) widget.setFocused(false);
-        widget.setX(widget.getX() + leftPos);
-        widget.setY(widget.getY() + topPos);
+        // widget.setFocused(false);
+        widget.x += leftPos;
+        widget.y += topPos;
         child.put(id, widget);
         addRenderableWidget(widget);
     }

@@ -58,7 +58,7 @@ public class OutputDirectionScreen extends AEBaseScreen<OutputDirectionMenu> {
             var side = button.getSide();
             if (side != null) {
                 var pos = getButtonPosition(button.getSide());
-                button.setPosition(this.leftPos + pos[0], this.topPos + pos[1]);
+                button.x = this.leftPos + pos[0]; button.y = this.topPos + pos[1];
             }
         }
     }
@@ -78,7 +78,7 @@ public class OutputDirectionScreen extends AEBaseScreen<OutputDirectionMenu> {
             var side = button.getSide();
             if (side != null) {
                 var pos = getButtonPosition(side);
-                button.setPosition(this.leftPos + pos[0], this.topPos + pos[1]);
+                button.x = this.leftPos + pos[0]; button.y = this.topPos + pos[1];
 
                 ItemStack item = this.getMenu().getAdjacentBlock(side);
                 button.setItemStack(item);

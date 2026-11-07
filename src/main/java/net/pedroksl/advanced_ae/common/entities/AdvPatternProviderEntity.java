@@ -2,6 +2,7 @@ package net.pedroksl.advanced_ae.common.entities;
 
 import java.util.*;
 
+import appeng.helpers.iface.PatternProviderLogic;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
@@ -26,8 +27,7 @@ import appeng.api.networking.IGridNodeListener;
 import appeng.api.orientation.BlockOrientation;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.util.AECableType;
-import appeng.block.crafting.PatternProviderBlock;
-import appeng.block.crafting.PushDirection;
+import net.pedroksl.advanced_ae.common.blocks.PushDirection;
 import appeng.blockentity.grid.AENetworkBlockEntity;
 import appeng.menu.ISubMenu;
 import appeng.menu.MenuOpener;
@@ -48,11 +48,11 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
     public AdvPatternProviderEntity(
             BlockEntityType<?> blockEntityType, BlockPos pos, BlockState blockState, int slots) {
         super(blockEntityType, pos, blockState);
-        this.logic = createLogic(slots);
+        this.logic = createLogic();
     }
 
-    protected AdvPatternProviderLogic createLogic(int slots) {
-        return new AdvPatternProviderLogic(this.getMainNode(), this, slots);
+    protected AdvPatternProviderLogic createLogic() {
+        return new AdvPatternProviderLogic(this.getMainNode(), this);
     }
 
     @Override
@@ -91,10 +91,13 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
     }
 
     private PushDirection getPushDirection() {
-        return getBlockState().getValue(PatternProviderBlock.PUSH_DIRECTION);
+        return PushDirection.ALL;
     }
 
-    @Override
+    public void setPendingPushDirection(PushDirection value) {
+        this.pendingPushDirectionChange = value;
+    }
+
     public Set<Direction> getGridConnectableSides(BlockOrientation orientation) {
         // In omnidirectional mode, every side is grid-connectable
         var pushDirection = getPushDirection().getDirection();
@@ -112,20 +115,15 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
         this.logic.addDrops(drops);
     }
 
-    @Override
     public void clearContent() {
-        super.clearContent();
         this.logic.clearContent();
     }
 
     @Override
     public void onReady() {
         if (pendingPushDirectionChange != null) {
-            level.setBlockAndUpdate(
-                    getBlockPos(),
-                    getBlockState().setValue(PatternProviderBlock.PUSH_DIRECTION, pendingPushDirectionChange));
             pendingPushDirectionChange = null;
-            onGridConnectableSidesChanged();
+            // onGridConnectableSidesChanged();
         }
 
         super.onReady();
@@ -165,7 +163,7 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
 
     @Override
     public AdvPatternProviderLogic getLogic() {
-        return logic;
+        return  logic;
     }
 
     @Override
@@ -203,22 +201,6 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
 
         if (mode == SettingsFrom.MEMORY_CARD) {
             logic.importSettings(input, player);
-
-            // Restore push direction blockstate
-            if (input.contains(PatternProviderBlock.PUSH_DIRECTION.getName(), Tag.TAG_BYTE)) {
-                var pushDirection = input.getByte(PatternProviderBlock.PUSH_DIRECTION.getName());
-                if (pushDirection >= 0 && pushDirection < PushDirection.values().length) {
-                    var level = getLevel();
-                    if (level != null) {
-                        level.setBlockAndUpdate(
-                                getBlockPos(),
-                                getBlockState()
-                                        .setValue(
-                                                PatternProviderBlock.PUSH_DIRECTION,
-                                                PushDirection.values()[pushDirection]));
-                    }
-                }
-            }
         }
     }
 
@@ -239,7 +221,7 @@ public class AdvPatternProviderEntity extends AENetworkBlockEntity implements Ad
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
-        onGridConnectableSidesChanged();
+        // onGridConnectableSidesChanged(); unsupported in AE 1.18
     }
 
     @Override

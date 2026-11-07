@@ -1,4 +1,5 @@
 package net.pedroksl.advanced_ae.common.definitions;
+import net.pedroksl.advanced_ae.common.Addons;
 
 import java.util.List;
 import java.util.function.Function;
@@ -14,7 +15,6 @@ import net.pedroksl.advanced_ae.common.items.upgrades.QuantumUpgradeBaseItem;
 import net.pedroksl.advanced_ae.common.items.upgrades.UpgradeType;
 import net.pedroksl.advanced_ae.common.parts.*;
 import net.pedroksl.advanced_ae.common.patterns.AdvProcessingPatternItem;
-import net.pedroksl.advanced_ae.xmod.Addons;
 import net.pedroksl.ae2addonlib.registry.ItemRegistry;
 import net.pedroksl.ae2addonlib.registry.helpers.LibItemDefinition;
 import net.pedroksl.ae2addonlib.util.AddonEnum;
@@ -77,12 +77,6 @@ public class AAEItems extends ItemRegistry {
     public static final LibItemDefinition<AdvProcessingPatternItem> ADV_PROCESSING_PATTERN =
             item("Advanced Processing Pattern", "adv_processing_pattern", AdvProcessingPatternItem::new);
 
-    public static final LibItemDefinition<Item> ADV_PATTERN_PROVIDER_UPGRADE = item(
-            "Advanced Pattern Provider Upgrade", "adv_pattern_provider_upgrade", AdvPatternProviderUpgradeItem::new);
-    public static final LibItemDefinition<Item> ADV_PATTERN_PROVIDER_CAPACITY_UPGRADE = item(
-            "Advanced Pattern Provider Capacity Upgrade",
-            "adv_pattern_provider_capacity_upgrade",
-            AdvPatternProviderCapacityUpgradeItem::new);
     public static final LibItemDefinition<MaterialItem> QUANTUM_INFUSED_DUST =
             item("Quantum Infused Dust", "quantum_infused_dust", MaterialItem::new);
     public static final LibItemDefinition<MaterialItem> QUANTUM_ALLOY =

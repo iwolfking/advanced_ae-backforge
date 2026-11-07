@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -61,7 +62,7 @@ public class AdvProcessingPatternItem extends ProcessingPatternItem {
         var out = details.getOutputs();
 
         var label = GuiText.Produces.text().copy().append(": ").withStyle(ChatFormatting.GRAY);
-        var and = Component.literal(" ")
+        var and = new TextComponent(" ")
                 .copy()
                 .append(GuiText.And.text())
                 .append(" ")
@@ -74,7 +75,7 @@ public class AdvProcessingPatternItem extends ProcessingPatternItem {
                 continue;
             }
 
-            lines.add(Component.empty().append(first ? label : and).append(getStackComponent(anOut)));
+            lines.add(new TextComponent("").append(first ? label : and).append(getStackComponent(anOut)));
             first = false;
         }
 
@@ -91,7 +92,7 @@ public class AdvProcessingPatternItem extends ProcessingPatternItem {
             var dirText = inputDirection == null
                     ? ""
                     : " (" + inputDirection.toString().toUpperCase().charAt(0) + ")";
-            lines.add(Component.empty()
+            lines.add(new TextComponent("")
                     .append(first ? with : and)
                     .append(getStackComponent(primaryInput))
                     .append(dirText));

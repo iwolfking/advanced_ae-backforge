@@ -14,6 +14,7 @@ public final class InitRecipeSerializers {
 
     private static void register(
             IForgeRegistry<RecipeSerializer<?>> registry, ResourceLocation id, RecipeSerializer<?> serializer) {
-        registry.register(id, serializer);
+        serializer.setRegistryName(id);
+        registry.register(serializer);
     }
 }

@@ -26,8 +26,8 @@ public enum AAECraftingUnitType implements ICraftingUnitType {
     }
 
     @Override
-    public long getStorageBytes() {
-        return 1024L * 1024 * storageMb;
+    public int getStorageBytes() {
+        return (int) (1024L * 1024 * storageMb);
     }
 
     public int getStorageMultiplier() {

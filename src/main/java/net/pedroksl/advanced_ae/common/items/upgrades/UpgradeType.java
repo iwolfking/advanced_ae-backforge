@@ -3,6 +3,7 @@ package net.pedroksl.advanced_ae.common.items.upgrades;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,14 +19,14 @@ public enum UpgradeType {
 
     WALK_SPEED(
             "Walk Speed",
-            UpgradeCards::walkSpeed,
+            null,
             SettingType.NUM_INPUT,
             10,
             ApplicationType.PASSIVE,
             AAEItems.WALK_SPEED_CARD),
     SPRINT_SPEED(
             "Sprint Speed",
-            UpgradeCards::sprintSpeed,
+            null,
             SettingType.NUM_INPUT,
             10,
             ApplicationType.PASSIVE,
@@ -33,7 +34,7 @@ public enum UpgradeType {
     STEP_ASSIST("Step Assist", null, SettingType.NUM_INPUT, 5, ApplicationType.PASSIVE_USE, AAEItems.STEP_ASSIST_CARD),
     JUMP_HEIGHT(
             "Jump Height",
-            UpgradeCards::jumpHeight,
+            null,
             SettingType.NUM_INPUT,
             10,
             ApplicationType.PASSIVE_USE,
@@ -42,7 +43,7 @@ public enum UpgradeType {
             "Lava Immunity", null, SettingType.NONE, 10, ApplicationType.PASSIVE_USE, AAEItems.LAVA_IMMUNITY_CARD),
     FLIGHT(
             "Flight",
-            UpgradeCards::creativeFlight,
+            null,
             SettingType.NUM_INPUT,
             10,
             ApplicationType.PASSIVE,
@@ -51,21 +52,21 @@ public enum UpgradeType {
             "Water Breathing", null, SettingType.NONE, 10, ApplicationType.PASSIVE_USE, AAEItems.WATER_BREATHING_CARD),
     AUTO_FEED(
             "Auto Feed",
-            UpgradeCards::autoFeed,
+            null,
             SettingType.FILTER,
             5,
             ApplicationType.PASSIVE,
             AAEItems.AUTO_FEED_CARD),
     AUTO_STOCK(
             "Auto Stock",
-            UpgradeCards::autoStock,
+            null,
             SettingType.FILTER,
             5,
             ApplicationType.PASSIVE,
             AAEItems.AUTO_STOCK_CARD),
     MAGNET(
             "Magnet",
-            UpgradeCards::magnet,
+            null,
             SettingType.NUM_AND_FILTER,
             5,
             ApplicationType.PASSIVE,
@@ -75,7 +76,7 @@ public enum UpgradeType {
     EVASION("Evasion", null, SettingType.NONE, 10, ApplicationType.BUFF, AAEItems.EVASION_CARD),
     REGENERATION(
             "Regeneration",
-            UpgradeCards::regeneration,
+            null,
             SettingType.NONE,
             10,
             ApplicationType.PASSIVE,
@@ -87,7 +88,7 @@ public enum UpgradeType {
     REACH("Reach Boost", null, SettingType.NUM_INPUT, 10, ApplicationType.BUFF, AAEItems.REACH_CARD),
     SWIM_SPEED(
             "Swim Speed",
-            UpgradeCards::swimSpeed,
+            null,
             SettingType.NUM_INPUT,
             5,
             ApplicationType.PASSIVE,
@@ -96,7 +97,7 @@ public enum UpgradeType {
     FLIGHT_DRIFT("No Flight Drift", null, SettingType.NUM_INPUT, 10, ApplicationType.BUFF, AAEItems.FLIGHT_DRIFT_CARD),
     CHARGING(
             "ME Recharging",
-            UpgradeCards::recharging,
+            null,
             SettingType.NONE,
             0,
             ApplicationType.PASSIVE,
@@ -180,7 +181,7 @@ public enum UpgradeType {
     }
 
     public Component getTranslatedName() {
-        return Component.translatable(getTranslationKey());
+        return new TranslatableComponent(getTranslationKey());
     }
 
     public UpgradeSettings getSettings() {

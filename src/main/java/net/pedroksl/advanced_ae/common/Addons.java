@@ -1,4 +1,4 @@
-package net.pedroksl.advanced_ae.xmod;
+package net.pedroksl.advanced_ae.common;
 
 import net.pedroksl.ae2addonlib.util.AddonEnum;
 

@@ -67,7 +67,7 @@ public interface IGridLinkedItem {
         var linkedLevel = serverLevel.getServer().getLevel(linkedPos.dimension());
         if (linkedLevel == null) {
             if (sendMessagesTo != null) {
-                sendMessagesTo.displayClientMessage(PlayerMessages.LinkedNetworkNotFound.text(), true);
+                sendMessagesTo.displayClientMessage(PlayerMessages.DeviceNotLinked.text(), true);
             }
             return null;
         }
@@ -75,7 +75,7 @@ public interface IGridLinkedItem {
         var be = Platform.getTickingBlockEntity(linkedLevel, linkedPos.pos());
         if (!(be instanceof IWirelessAccessPoint accessPoint)) {
             if (sendMessagesTo != null) {
-                sendMessagesTo.displayClientMessage(PlayerMessages.LinkedNetworkNotFound.text(), true);
+                sendMessagesTo.displayClientMessage(PlayerMessages.DeviceNotLinked.text(), true);
             }
             return null;
         }
@@ -83,7 +83,7 @@ public interface IGridLinkedItem {
         var grid = accessPoint.getGrid();
         if (grid == null) {
             if (sendMessagesTo != null) {
-                sendMessagesTo.displayClientMessage(PlayerMessages.LinkedNetworkNotFound.text(), true);
+                sendMessagesTo.displayClientMessage(PlayerMessages.DeviceNotLinked.text(), true);
             }
         }
         return grid;
@@ -96,10 +96,13 @@ public interface IGridLinkedItem {
         }
 
         @Override
-        public void link(ItemStack itemStack, GlobalPos pos) {
-            GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, pos).result().ifPresent(tag -> itemStack
-                    .getOrCreateTag()
-                    .put(TAG_ACCESS_POINT_POS, tag));
+        public void link(ItemStack itemStack, long pos) {
+            CompoundTag tag = itemStack.getOrCreateTag();
+            tag.put(TAG_ACCESS_POINT_POS,
+                    GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE,
+                                    GlobalPos.of(net.minecraft.world.level.Level.OVERWORLD,
+                                            net.minecraft.core.BlockPos.of(pos)))
+                            .resultOrPartial(LOG::error).orElse(new CompoundTag()));
         }
 
         @Override

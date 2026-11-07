@@ -36,7 +36,7 @@ import appeng.api.stacks.GenericStack;
 /**
  * Helper functions to work with patterns, mostly related to (de)serialization.
  */
-class AdvPatternEncoding {
+public class AdvPatternEncoding {
     private static final String NBT_INPUTS = "in";
     private static final String NBT_OUTPUTS = "out";
     private static final String NBT_INPUT_DIRECTIONS = "dir";

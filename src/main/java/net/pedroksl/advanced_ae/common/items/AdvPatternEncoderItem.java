@@ -47,7 +47,7 @@ public class AdvPatternEncoderItem extends AEBaseItem implements IMenuItem {
     protected boolean openFromInventory(Player player, int inventorySlot, boolean returningFromSubmenu) {
         var is = player.getInventory().getItem(inventorySlot);
 
-        if (!player.level().isClientSide() && checkPreconditions(is)) {
+        if (!player.level.isClientSide() && checkPreconditions(is)) {
             return MenuOpener.open(
                     AAEMenus.ADV_PATTERN_ENCODER.get(),
                     player,

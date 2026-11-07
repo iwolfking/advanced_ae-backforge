@@ -2,11 +2,13 @@ package net.pedroksl.advanced_ae.gui.patternencoder;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import appeng.api.stacks.AEKey;
@@ -27,7 +29,7 @@ public class DirectionInputButton extends Button {
     private int hSH;
 
     public DirectionInputButton(int x, int y, int width, int height, ResourceLocation texture, OnPress onPress) {
-        super(x, y, width, height, Component.empty(), onPress, Button.DEFAULT_NARRATION);
+        super(x, y, width, height, new TextComponent(""), onPress);
 
         this.texture = texture;
     }
@@ -71,18 +73,17 @@ public class DirectionInputButton extends Button {
         };
     }
 
-    @Override
-    protected void renderWidget(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void renderButton(PoseStack pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         RenderSystem.setShader(GameRenderer::getPositionShader);
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         RenderSystem.setShaderTexture(0, texture);
-        pGuiGraphics.blit(texture, this.getX(), this.getY(), 0, 0, width, height, 16, 16);
+        GuiComponent.blit(pGuiGraphics, this.x, this.y, 0, 0, width, height, 16, 16);
 
         if (highlighted) {
-            pGuiGraphics.blit(
-                    highlightTexture,
-                    this.getX() - 1,
-                    this.getY() - 1,
+            RenderSystem.setShaderTexture(0, highlightTexture);
+            GuiComponent.blit(pGuiGraphics,
+                    this.x - 1,
+                    this.y - 1,
                     this.hX,
                     this.hY,
                     this.hW,

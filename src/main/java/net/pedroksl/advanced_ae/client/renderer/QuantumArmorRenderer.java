@@ -3,23 +3,23 @@ package net.pedroksl.advanced_ae.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import org.jetbrains.annotations.Nullable;
-
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+
 import net.pedroksl.advanced_ae.AdvancedAE;
 import net.pedroksl.advanced_ae.common.helpers.AAEColor;
 import net.pedroksl.advanced_ae.common.items.armors.QuantumArmorBase;
 
-import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.model.DefaultedItemGeoModel;
-import software.bernie.geckolib.renderer.GeoArmorRenderer;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
+import software.bernie.geckolib3.geo.render.built.GeoModel;
+import software.bernie.geckolib3.renderers.geo.GeoArmorRenderer;
+import software.bernie.geckolib3.util.EModelRenderCycle;
 
-public class QuantumArmorRenderer extends GeoArmorRenderer<QuantumArmorBase> {
+public class QuantumArmorRenderer
+        extends GeoArmorRenderer<QuantumArmorBase> {
 
     public static final String HUD_BONE = "hud";
     public static final String LEFT_BLADE_BONE = "blade_left";
@@ -28,87 +28,159 @@ public class QuantumArmorRenderer extends GeoArmorRenderer<QuantumArmorBase> {
     public static final String RIGHT_ARM = "armorRightArm";
     public static final String LEFT_ARM = "armorLeftArm";
 
-    private final QuantumArmorTintLayer tintLayer;
+    private static final ResourceLocation TINT_TEXTURE =
+            AdvancedAE.makeId("textures/item/quantum_armor_tint.png");
+
+    private int tintColor = AAEColor.PURPLE.argb();
 
     public QuantumArmorRenderer() {
-        super(new DefaultedItemGeoModel<>(AdvancedAE.makeId("quantum_armor")));
-
-        this.tintLayer = new QuantumArmorTintLayer(this);
-        addRenderLayer(this.tintLayer);
+        super(new QuantumArmorModel());
     }
 
     public void setBoneVisible(String boneName, boolean visible) {
-        this.getGeoModel().getBone(boneName).ifPresent(geoBone -> geoBone.setHidden(!visible));
+        getGeoModelProvider()
+                .getBone(boneName)
+                .setHidden(!visible);
     }
 
     public void setTintColor(int color) {
-        this.tintLayer.tintColor = color;
+        this.tintColor = color;
     }
 
-    private static class QuantumArmorTintLayer extends AutoGlowingGeoLayer<QuantumArmorBase> {
+    @Override
+    public void render(
+            GeoModel model,
+            QuantumArmorBase animatable,
+            float partialTick,
+            RenderType renderType,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha
+    ) {
+        setCurrentRTB(bufferSource);
 
-        private final ResourceLocation TINT_TEXTURE = AdvancedAE.makeId("textures/item/quantum_armor_tint.png");
-        private int tintColor = AAEColor.PURPLE.argb();
+        renderEarly(
+                animatable,
+                poseStack,
+                partialTick,
+                bufferSource,
+                buffer,
+                packedLight,
+                packedOverlay,
+                red,
+                green,
+                blue,
+                alpha
+        );
 
-        public QuantumArmorTintLayer(GeoArmorRenderer<QuantumArmorBase> armorRenderer) {
-            super(armorRenderer);
+        if (bufferSource != null) {
+            buffer = bufferSource.getBuffer(renderType);
         }
 
-        @Override
-        public void render(
-                PoseStack poseStack,
-                QuantumArmorBase animatable,
-                BakedGeoModel bakedModel,
-                @Nullable RenderType renderType,
-                MultiBufferSource bufferSource,
-                @Nullable VertexConsumer buffer,
-                float partialTick,
-                int packedLight,
-                int packedOverlay) {
-            // Render Tint parts
-            RenderType render = RenderType.entityCutout(TINT_TEXTURE);
+        renderLate(
+                animatable,
+                poseStack,
+                partialTick,
+                bufferSource,
+                buffer,
+                packedLight,
+                packedOverlay,
+                red,
+                green,
+                blue,
+                alpha
+        );
 
-            var c = AAEColor.ofArgb(this.tintColor);
-            this.getRenderer()
-                    .reRender(
-                            bakedModel,
-                            poseStack,
-                            bufferSource,
-                            animatable,
-                            render,
-                            bufferSource.getBuffer(render),
-                            partialTick,
-                            packedLight,
-                            packedOverlay,
-                            c.r(),
-                            c.g(),
-                            c.b(),
-                            c.a());
-
-            // Render emissive parts
-            renderType = getRenderType(animatable);
-            if (renderType != null) {
-                getRenderer()
-                        .reRender(
-                                bakedModel,
-                                poseStack,
-                                bufferSource,
-                                animatable,
-                                renderType,
-                                bufferSource.getBuffer(renderType),
-                                partialTick,
-                                LightTexture.FULL_SKY,
-                                OverlayTexture.NO_OVERLAY,
-                                c.r(),
-                                c.g(),
-                                c.b(),
-                                c.a());
-            }
+        for (var bone : model.topLevelBones) {
+            renderRecursively(
+                    bone,
+                    poseStack,
+                    buffer,
+                    packedLight,
+                    packedOverlay,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
         }
 
-        @Override
-        protected ResourceLocation getTextureResource(QuantumArmorBase animatable) {
-            return TINT_TEXTURE;
+        MultiBufferSource.BufferSource tintBufferSource =
+                Minecraft.getInstance().renderBuffers().bufferSource();
+
+        AAEColor color = AAEColor.ofArgb(this.tintColor);
+
+        RenderType tintRenderType = RenderType.entityCutout(TINT_TEXTURE);
+
+        VertexConsumer tintBuffer =
+                tintBufferSource.getBuffer(tintRenderType);
+
+        renderTintPass(
+                model,
+                poseStack,
+                tintBuffer,
+                packedLight,
+                packedOverlay,
+                color.r(),
+                color.g(),
+                color.b(),
+                color.a()
+        );
+
+        tintBufferSource.endBatch(tintRenderType);
+
+        // Emissive armor rendering
+        RenderType emissiveRenderType = RenderType.eyes(TINT_TEXTURE);
+
+        VertexConsumer emissiveBuffer =
+                tintBufferSource.getBuffer(emissiveRenderType);
+
+        renderTintPass(
+                model,
+                poseStack,
+                emissiveBuffer,
+                LightTexture.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY,
+                color.r(),
+                color.g(),
+                color.b(),
+                color.a()
+        );
+
+        tintBufferSource.endBatch(emissiveRenderType);
+
+        setCurrentModelRenderCycle(EModelRenderCycle.REPEATED);
+    }
+
+    private void renderTintPass(
+            GeoModel model,
+            PoseStack poseStack,
+            VertexConsumer buffer,
+            int packedLight,
+            int packedOverlay,
+            float red,
+            float green,
+            float blue,
+            float alpha
+    ) {
+        for (var bone : model.topLevelBones) {
+            renderRecursively(
+                    bone,
+                    poseStack,
+                    buffer,
+                    packedLight,
+                    packedOverlay,
+                    red,
+                    green,
+                    blue,
+                    alpha
+            );
         }
     }
 }
