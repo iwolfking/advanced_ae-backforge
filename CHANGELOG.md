@@ -1,1 +1,2 @@
-- Fixed curio slot texture
+## Features
+- Moved sound play logic to using network packets

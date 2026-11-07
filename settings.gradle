@@ -8,4 +8,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'advanced_ae'
+rootProject.name = 'ae2tabs'

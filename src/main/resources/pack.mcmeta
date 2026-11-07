@@ -1,6 +1,6 @@
 {
   "pack": {
-    "description": "Resources used for AdvancedAE",
-    "pack_format": 8
+    "pack_format": 8,
+    "description": "Resources used for AE2 Addon Lib"
   }
 }

@@ -1,23 +1,20 @@
 modLoader="javafml" #mandatory
-loaderVersion="${loader_version_range}" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
+loaderVersion="${loader_version_range}" #mandatory
 license="${mod_license}"
 
 [[mods]] #mandatory
-modId="${mod_id}" #mandatory
-version="${mod_version}" #mandatory
-displayName="${mod_name}" #mandatory
-authors="${mod_authors}" #optional
+    modId="${mod_id}" #mandatory
+    version="${mod_version}" #mandatory
+    displayName="${mod_name}" #mandatory
+    #displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+    #logoFile="examplemod.png" #optional
+    authors="${mod_authors}" #optional
+    description='''${mod_description}'''
 
-description='''${mod_description}'''
-issueTrackerURL="https://github.com/pedroksl/AdvancedAE/issues"
-displayURL="https://github.com/pedroksl/AdvanceddAE"
-credits="Sea_Kerman for models"
-logoFile="logo.png"
-
-[[dependencies.${mod_id}]]
+[[dependencies.${mod_id}]] #optional
     modId="forge"
     mandatory=true
-    versionRange="${forge_version_range}"
+    versionRange="${forge_version}"
     ordering="NONE"
     side="BOTH"
 [[dependencies.${mod_id}]]
@@ -29,12 +26,6 @@ logoFile="logo.png"
 [[dependencies.${mod_id}]]
     modId="ae2"
     mandatory=true
-    versionRange="[11.7.0,)"
-    ordering="AFTER"
-    side="BOTH"
-[[dependencies.${mod_id}]]
-    modId="ae2wtlib"
-    mandatory=false
-    versionRange="[1.18,)"
+    versionRange="[${ae2_version},)"
     ordering="AFTER"
     side="BOTH"
